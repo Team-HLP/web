@@ -18,6 +18,7 @@ pipeline {
                 dir('.') {
                     sh '''
                         echo "🔧 React 프로젝트 빌드 중..."
+                        brew install node
                         npm install
                         npm run build
                     '''
