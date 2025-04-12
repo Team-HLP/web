@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import axios from '../api/axios';
 
 async function hashPassword(password) {
   const encoder = new TextEncoder();
@@ -18,7 +18,7 @@ function LoginPage() {
     try {
       const hashedPassword = await hashPassword(password);
 
-      const response = await axios.post('http://localhost:8000/user/login', {
+      const response = await axios.post('/user/login', {
         login_id: loginId,
         password: hashedPassword,
       });
