@@ -18,7 +18,7 @@ function LoginPage() {
     try {
       const hashedPassword = await hashPassword(password);
 
-      const response = await axios.post('/user/login', {
+      const response = await axios.post('/admin/login', {
         login_id: loginId,
         password: hashedPassword,
       });
