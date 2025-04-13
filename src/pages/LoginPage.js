@@ -28,7 +28,14 @@ function LoginPage() {
 
       alert('로그인 성공!');
     } catch (error) {
-      console.error('로그인 실패:', error);
+        if (axios.isAxiosError(error)) {
+          console.error('✅ Axios 오류 발생');
+          console.error('📄 상태코드:', error.response?.status);
+          console.error('📦 응답 데이터:', error.response?.data);
+          console.error('🧾 에러 메시지:', error.message);
+        } else {
+          console.error('❌ 예기치 않은 에러:', error);
+        }
       alert('로그인 실패: 아이디 또는 비밀번호를 확인하세요.');
     }
   };
