@@ -130,7 +130,11 @@ const MemberListPage = () => {
       text: '',
       formatter: (cell, row) => (
         <div className="d-flex gap-2">
-          <Button variant="info" size="sm" onClick={() => {/* 상세 보기 기능 예정 */ }}>
+          <Button
+            variant="info"
+            size="sm"
+            onClick={() => navigate(`/admin/member/${row.id}`)}
+          >
             View
           </Button>
           <Button variant="danger" size="sm" onClick={() => handleDeleteClick(row)}>

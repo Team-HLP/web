@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import MemberListPage from './pages/MemberListPage';
+import MemberDetailPage from './pages/MemberDetailPage';
 
 // 인증 체크용 컴포넌트
 const RequireAuth = ({ children }) => {
@@ -19,6 +20,14 @@ const App = () => {
           element={
             <RequireAuth>
               <MemberListPage />
+            </RequireAuth>
+          }
+        />
+                <Route
+          path="/admin/member/:userId"
+          element={
+            <RequireAuth>
+              <MemberDetailPage />
             </RequireAuth>
           }
         />
