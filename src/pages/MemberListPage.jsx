@@ -7,15 +7,6 @@ import { Modal, Button, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-bootstrap-table-next/dist/react-bootstrap-table2.min.css';
 
-// SHA-256 해싱 함수
-const hashPhoneNumber = async (phone) => {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(phone);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-};
-
 const MemberListPage = () => {
   const [members, setMembers] = useState([]);
   const [showModal, setShowModal] = useState(false);
