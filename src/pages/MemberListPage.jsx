@@ -19,7 +19,6 @@ const MemberListPage = () => {
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [password, setPassword] = useState('');
 
   const navigate = useNavigate();
 
@@ -97,11 +96,13 @@ const MemberListPage = () => {
   const handleConfirmDelete = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      await axios.delete(`https://api-hlp.o-r.kr/admin/user/${selectedUser.loginId}`, {
+      await axios.delete(`https://api-hlp.o-r.kr/admin/user/withdraw`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        data: { password },
+        params: {
+          userId: selectedUser.id 
+        }
       });
       alert('회원이 삭제되었습니다.');
       setShowDeleteModal(false);
@@ -156,7 +157,7 @@ const MemberListPage = () => {
       </div>
 
       <BootstrapTable
-        keyField="loginId"
+        keyField="id"
         data={members}
         columns={columns}
         bordered={false}
@@ -230,14 +231,7 @@ const MemberListPage = () => {
           <Modal.Title>회원 삭제 확인</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form.Group>
-            <Form.Label>비밀번호를 입력하세요</Form.Label>
-            <Form.Control
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </Form.Group>
+          정말로 회원을 삭제하시겠습니까?
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
