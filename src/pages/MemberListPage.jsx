@@ -9,8 +9,8 @@ import 'react-bootstrap-table-next/dist/react-bootstrap-table2.min.css';
 
 const MemberListPage = () => {
   const [members, setMembers] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [dummyUser, setDummyUser] = useState({
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [newUser, setNewUser] = useState({
     loginId: '',
     name: '',
     age: '',
@@ -19,11 +19,7 @@ const MemberListPage = () => {
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-
-  const handleDeleteClick = (user) => {
-    setSelectedUser(user);
-    setShowDeleteModal(true);
-  };
+  const [password, setPassword] = useState('');
 
   const navigate = useNavigate();
 
@@ -51,29 +47,30 @@ const MemberListPage = () => {
     navigate('/');
   };
 
-  const handleShowModal = () => setShowModal(true);
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setDummyUser({ loginId: '', name: '', age: '', sex: '', password: '' });
+  const handleShowRegisterModal = () => setShowRegisterModal(true);
+  const handleCloseRegisterModal = () => {
+    setShowRegisterModal(false);
+    setNewUser({ loginId: '', name: '', age: '', sex: '', password: '' });
   };
 
-  const handleChange = (e) => {
+  const handleChangeNewUser = (e) => {
     const { name, value } = e.target;
-    setDummyUser((prev) => ({ ...prev, [name]: value }));
+    setNewUser((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmitDummy = async () => {
+  const handleRegisterUser = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const plainPhone = dummyUser.loginId.replace(/-/g, '');
-      const gender = dummyUser.sex === '남자' ? 'MAN' : 'WOMAN';
+      const plainPhone = newUser.loginId.replace(/-/g, '');
+      const gender = newUser.sex === '남자' ? 'MAN' : 'WOMAN';
 
       const payload = {
-        name: dummyUser.name,
+        name: newUser.name,
         phone_number: plainPhone,
-        age: Number(dummyUser.age),
+        age: Number(newUser.age),
         sex: gender,
       };
+
       console.log('access_token:', token);
       console.log('등록 요청 데이터:', payload);
 
@@ -84,14 +81,18 @@ const MemberListPage = () => {
       });
 
       alert('회원 등록 성공!');
-      handleCloseModal();
+      handleCloseRegisterModal();
       fetchMembers();
     } catch (error) {
       console.error('회원 등록 실패:', error);
       alert('회원 등록 실패');
     }
   };
-  const [password, setPassword] = useState('');
+
+  const handleDeleteClick = (user) => {
+    setSelectedUser(user);
+    setShowDeleteModal(true);
+  };
 
   const handleConfirmDelete = async () => {
     try {
@@ -104,7 +105,7 @@ const MemberListPage = () => {
       });
       alert('회원이 삭제되었습니다.');
       setShowDeleteModal(false);
-      fetchMembers(); // 회원 목록 갱신
+      fetchMembers();
     } catch (error) {
       console.error('회원 삭제 실패:', error);
       alert('회원 삭제에 실패했습니다.');
@@ -127,7 +128,7 @@ const MemberListPage = () => {
       text: '',
       formatter: (cell, row) => (
         <div className="d-flex gap-2">
-          <Button variant="info" size="sm" onClick={() => {/* 상세 보기 기능 구현 예정 */ }}>
+          <Button variant="info" size="sm" onClick={() => {/* 상세 보기 기능 예정 */ }}>
             View
           </Button>
           <Button variant="danger" size="sm" onClick={() => handleDeleteClick(row)}>
@@ -145,7 +146,7 @@ const MemberListPage = () => {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="mb-0">회원 리스트</h2>
         <div>
-          <Button variant="outline-primary" className="me-2" onClick={handleShowModal}>
+          <Button variant="outline-primary" className="me-2" onClick={handleShowRegisterModal}>
             회원 아이디 발급
           </Button>
           <Button variant="outline-danger" onClick={handleLogout}>
@@ -166,7 +167,7 @@ const MemberListPage = () => {
         noDataIndication="회원 정보가 없습니다."
       />
 
-      <Modal show={showModal} onHide={handleCloseModal}>
+      <Modal show={showRegisterModal} onHide={handleCloseRegisterModal}>
         <Modal.Header closeButton>
           <Modal.Title>회원 아이디 발급</Modal.Title>
         </Modal.Header>
@@ -177,8 +178,8 @@ const MemberListPage = () => {
               <Form.Control
                 type="text"
                 name="loginId"
-                value={dummyUser.loginId}
-                onChange={handleChange}
+                value={newUser.loginId}
+                onChange={handleChangeNewUser}
                 placeholder="01012345678"
               />
             </Form.Group>
@@ -187,8 +188,8 @@ const MemberListPage = () => {
               <Form.Control
                 type="text"
                 name="name"
-                value={dummyUser.name}
-                onChange={handleChange}
+                value={newUser.name}
+                onChange={handleChangeNewUser}
               />
             </Form.Group>
             <Form.Group className="mb-3">
@@ -196,16 +197,16 @@ const MemberListPage = () => {
               <Form.Control
                 type="number"
                 name="age"
-                value={dummyUser.age}
-                onChange={handleChange}
+                value={newUser.age}
+                onChange={handleChangeNewUser}
               />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>성별</Form.Label>
               <Form.Select
                 name="sex"
-                value={dummyUser.sex}
-                onChange={handleChange}
+                value={newUser.sex}
+                onChange={handleChangeNewUser}
               >
                 <option value="">선택</option>
                 <option value="남자">남자</option>
@@ -215,15 +216,15 @@ const MemberListPage = () => {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseModal}>
+          <Button variant="secondary" onClick={handleCloseRegisterModal}>
             취소
           </Button>
-          <Button variant="primary" onClick={handleSubmitDummy}>
+          <Button variant="primary" onClick={handleRegisterUser}>
             확인
           </Button>
         </Modal.Footer>
       </Modal>
-      
+
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>회원 삭제 확인</Modal.Title>
