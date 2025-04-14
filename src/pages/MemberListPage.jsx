@@ -19,6 +19,7 @@ const MemberListPage = () => {
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const navigate = useNavigate();
 
@@ -101,7 +102,7 @@ const MemberListPage = () => {
           Authorization: `Bearer ${token}`,
         },
         params: {
-          userId: selectedUser.id 
+          userId: selectedUser.id
         }
       });
       alert('회원이 삭제되었습니다.');
@@ -220,8 +221,31 @@ const MemberListPage = () => {
           <Button variant="secondary" onClick={handleCloseRegisterModal}>
             취소
           </Button>
-          <Button variant="primary" onClick={handleRegisterUser}>
+          <Button variant="primary" onClick={() => setShowConfirmModal(true)}>
             확인
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>입력 정보 확인</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p><strong>전화번호:</strong> {newUser.loginId}</p>
+          <p><strong>이름:</strong> {newUser.name}</p>
+          <p><strong>나이:</strong> {newUser.age}세</p>
+          <p><strong>성별:</strong> {newUser.sex}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>
+            취소
+          </Button>
+          <Button variant="primary" onClick={async () => {
+            await handleRegisterUser();
+            setShowConfirmModal(false);
+          }}>
+            등록
           </Button>
         </Modal.Footer>
       </Modal>
