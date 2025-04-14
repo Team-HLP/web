@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import axios from '../api/axios';
+import { useNavigate } from 'react-router-dom';
+import '../styles/login.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 async function hashPassword(password) {
   const encoder = new TextEncoder();
@@ -13,6 +16,7 @@ async function hashPassword(password) {
 function LoginPage() {
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
+  const navigate = useNavigate();
 
   const handleLogin = async () => {
     try {
@@ -26,7 +30,7 @@ function LoginPage() {
       const access_token = response.data.access_token;
       localStorage.setItem('access_token', access_token);
 
-      alert('로그인 성공!');
+      navigate('/admin/member-list');
     } catch (error) {
       console.error('로그인 실패:', error);
       alert('로그인 실패: 아이디 또는 비밀번호를 확인하세요.');
@@ -34,25 +38,39 @@ function LoginPage() {
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: '100px auto' }}>
-      <h2>Admin Login</h2>
-      <input
-        type="text"
-        placeholder="Login ID"
-        value={loginId}
-        onChange={(e) => setLoginId(e.target.value)}
-        style={{ width: '100%', marginBottom: 10 }}
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        style={{ width: '100%', marginBottom: 10 }}
-      />
-      <button onClick={handleLogin} style={{ width: '100%' }}>
-        로그인
-      </button>
+    <div id="container" className="text-center">
+      <div id="loginBox">
+        <div id="loginBoxTitle">ADHD-VR REPORT</div>
+        <div id="inputBox">
+          <div className="input-form-box">
+            <span>아이디</span>
+            <input
+              type="text"
+              className="form-control"
+              value={loginId}
+              onChange={(e) => setLoginId(e.target.value)}
+            />
+          </div>
+          <div className="input-form-box">
+            <span>비밀번호</span>
+            <input
+              type="password"
+              className="form-control"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <div className="button-login-box">
+            <button
+              type="button"
+              className="btn btn-primary btn-xs w-100"
+              onClick={handleLogin}
+            >
+              로그인
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
