@@ -61,15 +61,16 @@ const MemberDetailPage = () => {
 
       <Card className="p-4 mb-4">
         <Row>
-          <Col><strong>ID:</strong> {user.loginId}</Col>
+          <Col><strong>ID:</strong> {user.login_id}</Col>
           <Col><strong>이름:</strong> {user.name}</Col>
         </Row>
         <Row>
+          <Col><strong>전화번호:</strong> {user.phone_number}</Col>
           <Col><strong>나이:</strong> {user.age}세</Col>
-          <Col><strong>성별:</strong> {user.sex}</Col>
         </Row>
         <Row>
-          <Col><strong>생성일:</strong> {user.createdAt}</Col>
+          <Col><strong>성별:</strong> {user.sex}</Col>
+          <Col><strong>생성일:</strong> {user.created_at}</Col>
         </Row>
       </Card>
 

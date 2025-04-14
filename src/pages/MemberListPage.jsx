@@ -11,7 +11,7 @@ const MemberListPage = () => {
   const [members, setMembers] = useState([]);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [newUser, setNewUser] = useState({
-    loginId: '',
+    login_id: '',
     name: '',
     age: '',
     sex: '',
@@ -50,7 +50,7 @@ const MemberListPage = () => {
   const handleShowRegisterModal = () => setShowRegisterModal(true);
   const handleCloseRegisterModal = () => {
     setShowRegisterModal(false);
-    setNewUser({ loginId: '', name: '', age: '', sex: '', password: '' });
+    setNewUser({ login_id: '', name: '', age: '', sex: '', password: '' });
   };
 
   const handleChangeNewUser = (e) => {
@@ -61,7 +61,7 @@ const MemberListPage = () => {
   const handleRegisterUser = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const plainPhone = newUser.loginId.replace(/-/g, '');
+      const plainPhone = newUser.login_id.replace(/-/g, '');
       const gender = newUser.sex === '남자' ? 'MAN' : 'WOMAN';
 
       const payload = {
@@ -115,7 +115,7 @@ const MemberListPage = () => {
   };
 
   const columns = [
-    { dataField: 'loginId', text: 'ID', sort: true },
+    { dataField: 'login_id', text: 'ID', sort: true },
     { dataField: 'name', text: '이름', sort: true },
     {
       dataField: 'age',
@@ -124,7 +124,7 @@ const MemberListPage = () => {
       sort: true,
     },
     { dataField: 'sex', text: '성별', sort: true },
-    { dataField: 'createdAt', text: '가입일', sort: true },
+    { dataField: 'created_at', text: '가입일', sort: true },
     {
       dataField: 'actions',
       text: '',
@@ -183,8 +183,8 @@ const MemberListPage = () => {
               <Form.Label>전화번호 (하이픈 없이 입력)</Form.Label>
               <Form.Control
                 type="text"
-                name="loginId"
-                value={newUser.loginId}
+                name="login_id"
+                value={newUser.login_id}
                 onChange={handleChangeNewUser}
                 placeholder="01012345678"
               />
@@ -236,7 +236,7 @@ const MemberListPage = () => {
           <Modal.Title>입력 정보 확인</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p><strong>전화번호:</strong> {newUser.loginId}</p>
+          <p><strong>전화번호:</strong> {newUser.login_id}</p>
           <p><strong>이름:</strong> {newUser.name}</p>
           <p><strong>나이:</strong> {newUser.age}세</p>
           <p><strong>성별:</strong> {newUser.sex}</p>
