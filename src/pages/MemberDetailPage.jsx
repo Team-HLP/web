@@ -85,7 +85,7 @@ const MemberDetailPage = () => {
               <Col><strong>진행 시간:</strong> {new Date(game.created_at).toLocaleString('ko-KR')}</Col>
               <Col xs="auto">
                 <Button
-                  variant="info"
+                  variant="warning"
                   size="sm"
                   onClick={() => navigate(`/admin/member/${userId}/session/${game.id}`)}
                 >

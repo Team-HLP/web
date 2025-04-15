@@ -129,16 +129,16 @@ const MemberListPage = () => {
       dataField: 'actions',
       text: '',
       formatter: (cell, row) => (
-        <div className="d-flex gap-2">
+        <div className="d-flex justify-content-end gap-2">
           <Button
-            variant="info"
+            variant="warning"
             size="sm"
             onClick={() => navigate(`/admin/member/${row.id}`)}
           >
-            View
+            조회
           </Button>
           <Button variant="danger" size="sm" onClick={() => handleDeleteClick(row)}>
-            Delete
+            삭제
           </Button>
         </div>
       ),
