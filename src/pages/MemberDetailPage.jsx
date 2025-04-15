@@ -69,22 +69,26 @@ const MemberDetailPage = () => {
       </Card>
 
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h5 className="mb-0">게임 기록</h5>
+        <h5 className="mb-0">훈련 기록</h5>
         <Button variant="outline-primary" size="sm" onClick={() => { /* TODO */ }}>
           전체 통계 보기
         </Button>
       </div>
 
       {games.length === 0 ? (
-        <p>등록된 게임 정보가 없습니다.</p>
+        <p>등록된 훈련 정보가 없습니다.</p>
       ) : (
         games.map((game, idx) => (
           <Card key={idx} className="mb-3 p-3">
             <Row className="align-items-center">
-              <Col><strong>게임 번호:</strong> {game.id}</Col>
-              <Col><strong>플레이 시간:</strong> {new Date(game.created_at).toLocaleString('ko-KR')}</Col>
+              <Col><strong>훈련 번호:</strong> {game.id}</Col>
+              <Col><strong>진행 시간:</strong> {new Date(game.created_at).toLocaleString('ko-KR')}</Col>
               <Col xs="auto">
-                <Button variant="info" size="sm" onClick={() => { /* TODO */ }}>
+                <Button
+                  variant="info"
+                  size="sm"
+                  onClick={() => navigate(`/admin/member/${userId}/session/${game.id}`)}
+                >
                   세션 조회
                 </Button>
               </Col>
