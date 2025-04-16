@@ -21,6 +21,10 @@ const MemberListPage = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [oldPwd, setOldPwd] = useState('');
+  const [newPwd, setNewPwd] = useState('');
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -147,11 +151,47 @@ const MemberListPage = () => {
     },
   ];
 
+  async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  const handleChangePassword = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const hashedOld = await hashPassword(oldPwd);
+      const hashedNew = await hashPassword(newPwd);
+
+      await axios.put('https://api-hlp.o-r.kr/admin/password', {
+        old_password: hashedOld,
+        new_password: hashedNew,
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      alert('비밀번호가 성공적으로 변경되었습니다.');
+      setShowAdminModal(false);
+      setOldPwd('');
+      setNewPwd('');
+    } catch (error) {
+      console.error('비밀번호 변경 실패:', error);
+      alert('비밀번호 변경에 실패했습니다.');
+    }
+  };
+
   return (
     <div className="container mt-5">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="mb-0">회원 리스트</h2>
         <div>
+          <Button variant="outline-secondary" className="me-2" onClick={() => setShowAdminModal(true)}>
+            관리자 설정
+          </Button>
           <Button variant="outline-primary" className="me-2" onClick={handleShowRegisterModal}>
             회원 아이디 발급
           </Button>
@@ -267,6 +307,40 @@ const MemberListPage = () => {
           </Button>
           <Button variant="danger" onClick={handleConfirmDelete}>
             삭제
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showAdminModal} onHide={() => setShowAdminModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>관리자 비밀번호 변경</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>기존 비밀번호</Form.Label>
+              <Form.Control
+                type="password"
+                value={oldPwd}
+                onChange={(e) => setOldPwd(e.target.value)}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>새 비밀번호</Form.Label>
+              <Form.Control
+                type="password"
+                value={newPwd}
+                onChange={(e) => setNewPwd(e.target.value)}
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowAdminModal(false)}>
+            닫기
+          </Button>
+          <Button variant="primary" onClick={handleChangePassword}>
+            변경
           </Button>
         </Modal.Footer>
       </Modal>
