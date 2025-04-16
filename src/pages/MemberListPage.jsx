@@ -27,6 +27,12 @@ const MemberListPage = () => {
 
   const navigate = useNavigate();
 
+  const rowEvents = {
+    onClick: (e, row) => {
+      navigate(`/admin/member/${row.id}`);
+    },
+  };
+
   useEffect(() => {
     fetchMembers();
   }, []);
@@ -134,13 +140,6 @@ const MemberListPage = () => {
       text: '',
       formatter: (cell, row) => (
         <div className="d-flex justify-content-end gap-2">
-          <Button
-            variant="warning"
-            size="sm"
-            onClick={() => navigate(`/admin/member/${row.id}`)}
-          >
-            조회
-          </Button>
           <Button variant="danger" size="sm" onClick={() => handleDeleteClick(row)}>
             삭제
           </Button>
@@ -205,6 +204,7 @@ const MemberListPage = () => {
         keyField="id"
         data={members}
         columns={columns}
+        rowEvents={rowEvents}
         bordered={false}
         striped
         hover

@@ -79,19 +79,26 @@ const MemberDetailPage = () => {
         <p>등록된 훈련 정보가 없습니다.</p>
       ) : (
         games.map((game, idx) => (
-          <Card key={idx} className="mb-3 p-3">
+          <Card
+            key={idx}
+            className="mb-3 p-3"
+            style={{
+              cursor: 'pointer',
+              transition: 'transform 0.1s ease-in-out, box-shadow 0.2s ease',
+            }}
+            onClick={() => navigate(`/admin/member/${userId}/session/${game.id}`)}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+              e.currentTarget.style.transform = 'scale(1.02)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow = 'none';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
             <Row className="align-items-center">
               <Col><strong>훈련 번호:</strong> {game.id}</Col>
               <Col><strong>진행 시간:</strong> {new Date(game.created_at).toLocaleString('ko-KR')}</Col>
-              <Col xs="auto">
-                <Button
-                  variant="warning"
-                  size="sm"
-                  onClick={() => navigate(`/admin/member/${userId}/session/${game.id}`)}
-                >
-                  세션 조회
-                </Button>
-              </Col>
             </Row>
           </Card>
         ))
