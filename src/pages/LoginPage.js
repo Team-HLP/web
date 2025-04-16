@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 import '../styles/login.css';
@@ -37,10 +37,19 @@ function LoginPage() {
     }
   };
 
+  useEffect(() => {
+    document.body.classList.add('login-background');
+
+    return () => {
+      document.body.classList.remove('login-background');
+    };
+  }, []);
+
+
   return (
     <div id="container" className="text-center">
+      <h1 id="pageTitle">ADHD-VR REPORT</h1>
       <div id="loginBox">
-        <div id="loginBoxTitle">ADHD-VR REPORT</div>
         <div id="inputBox">
           <div className="input-form-box">
             <span>아이디</span>

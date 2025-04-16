@@ -13,6 +13,12 @@
   }
 }
 
+body.login-background {
+  background: radial-gradient(circle at center, #ffffff 60%, #f0f2f7, #e4e7ec);
+  background-size: 150% 150%;
+  animation: edgeGlow 15s ease infinite;
+}
+
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
