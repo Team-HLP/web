@@ -1,22 +1,27 @@
+// MemberDetailPage.jsx
+
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Card, Container, Row, Col } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
+// 회원 상세 정보 페이지
 const MemberDetailPage = () => {
-  const { userId } = useParams();
-  const navigate = useNavigate();
+  const { userId } = useParams(); // URL에서 userId 추출
+  const navigate = useNavigate(); // 페이지 이동에 사용
 
-  const [user, setUser] = useState(null);
-  const [games, setGames] = useState([]);
+  const [user, setUser] = useState(null); // 선택된 회원 정보
+  const [games, setGames] = useState([]); // 해당 회원의 훈련(게임) 기록 목록
 
+  // 회원 정보 불러오기 함수
   const fetchUser = useCallback(async () => {
     try {
       const token = localStorage.getItem('access_token');
       const res = await axios.get('https://api-hlp.o-r.kr/admin/users', {
         headers: { Authorization: `Bearer ${token}` },
       });
+      // 전체 회원 중에서 해당 userId와 일치하는 유저 찾기
       const userData = res.data.find((u) => u.id === Number(userId));
       setUser(userData);
     } catch (error) {
@@ -24,6 +29,7 @@ const MemberDetailPage = () => {
     }
   }, [userId]);
 
+  // 게임(훈련) 기록 불러오기 함수
   const fetchGames = useCallback(async () => {
     try {
       const token = localStorage.getItem('access_token');
@@ -37,15 +43,18 @@ const MemberDetailPage = () => {
     }
   }, [userId]);
 
+  // 컴포넌트 마운트 시 회원 정보와 게임 기록 불러오기
   useEffect(() => {
     fetchUser();
     fetchGames();
   }, [fetchUser, fetchGames]);
 
+  // 로딩 중 화면
   if (!user) return <div className="container mt-5">회원 정보를 불러오는 중...</div>;
 
   return (
     <Container className="mt-5">
+      {/* 상단 제목 및 뒤로가기 버튼 */}
       <Row className="mb-4 align-items-center justify-content-between">
         <Col><h2>회원 상세 정보</h2></Col>
         <Col xs="auto">
@@ -53,6 +62,7 @@ const MemberDetailPage = () => {
         </Col>
       </Row>
 
+      {/* 회원 기본 정보 카드 */}
       <Card className="p-4 mb-4">
         <Row>
           <Col><strong>ID:</strong> {user.login_id}</Col>
@@ -68,6 +78,7 @@ const MemberDetailPage = () => {
         </Row>
       </Card>
 
+      {/* 훈련 기록 섹션 제목 및 (예정된) 통계 보기 버튼 */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h5 className="mb-0">훈련 기록</h5>
         <Button variant="outline-primary" size="sm" onClick={() => { /* TODO */ }}>
@@ -75,6 +86,7 @@ const MemberDetailPage = () => {
         </Button>
       </div>
 
+      {/* 훈련 기록 카드 목록 (없을 경우 메시지 출력) */}
       {games.length === 0 ? (
         <p>등록된 훈련 정보가 없습니다.</p>
       ) : (
@@ -86,7 +98,9 @@ const MemberDetailPage = () => {
               cursor: 'pointer',
               transition: 'transform 0.1s ease-in-out, box-shadow 0.2s ease',
             }}
+            // 클릭 시 해당 세션 상세 페이지로 이동
             onClick={() => navigate(`/admin/member/${userId}/session/${game.id}`)}
+            // 카드 마우스 hover 효과
             onMouseEnter={(e) => {
               e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
               e.currentTarget.style.transform = 'scale(1.02)';

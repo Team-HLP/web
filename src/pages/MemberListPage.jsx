@@ -1,3 +1,5 @@
+// MemberListPage.jsx
+
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +10,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-bootstrap-table-next/dist/react-bootstrap-table2.min.css';
 
 const MemberListPage = () => {
+  // 상태변수 선언
   const [members, setMembers] = useState([]);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -24,21 +27,23 @@ const MemberListPage = () => {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [oldPwd, setOldPwd] = useState('');
   const [newPwd, setNewPwd] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false); // 등록 중 여부
+  const [isRegistering, setIsRegistering] = useState(false); // 중복 등록 방지
 
 
   const navigate = useNavigate();
 
+  // 테이블 행 클릭 시 상세 페이지 이동
   const rowEvents = {
     onClick: (e, row) => {
       navigate(`/admin/member/${row.id}`);
     },
   };
-
+  // 컴포넌트 마운트 시 회원 목록 불러오기
   useEffect(() => {
     fetchMembers();
   }, []);
 
+  // API로 회원 목록 가져오기
   const fetchMembers = async () => {
     try {
       const token = localStorage.getItem('access_token');
@@ -54,22 +59,26 @@ const MemberListPage = () => {
     }
   };
 
+  // 로그아웃 핸들러
   const handleLogout = () => {
     localStorage.removeItem('access_token');
     navigate('/');
   };
 
+  // 등록 모달 열기/닫기
   const handleShowRegisterModal = () => setShowRegisterModal(true);
   const handleCloseRegisterModal = () => {
     setShowRegisterModal(false);
     setNewUser({ login_id: '', name: '', age: '', sex: '', password: '' });
   };
 
+  // 등록 폼 값 변경 핸들러
   const handleChangeNewUser = (e) => {
     const { name, value } = e.target;
     setNewUser((prev) => ({ ...prev, [name]: value }));
   };
 
+  // 회원 등록 요청
   const handleRegisterUser = async () => {
     if (isRegistering) return;
     setIsRegistering(true);
@@ -98,7 +107,7 @@ const MemberListPage = () => {
       return;
     }
 
-    // 중복 확인
+    // 중복 전화번호 확인
     const isDuplicate = members.some(
       (user) => user.phone_number === plainPhone
     );
@@ -135,6 +144,7 @@ const MemberListPage = () => {
     }
   };
 
+  // 회원 삭제 요청
   const handleDeleteClick = (user) => {
     setSelectedUser(user);
     setShowDeleteModal(true);
@@ -160,32 +170,50 @@ const MemberListPage = () => {
     }
   };
 
+  // 회원 리스트 테이블 컬럼 정의
   const columns = [
-    { dataField: 'login_id', text: 'ID', sort: true },
-    { dataField: 'name', text: '이름', sort: true },
     {
-      dataField: 'age',
-      text: '나이',
-      formatter: (value) => `${value}세`,
-      sort: true,
+      dataField: 'login_id',       // 사용자 로그인 ID (전화번호 기반)
+      text: 'ID',                  // 테이블 헤더에 표시될 이름
+      sort: true                   // 정렬 가능
     },
-    { dataField: 'sex', text: '성별', sort: true },
-    { dataField: 'created_at', text: '가입일', sort: true },
     {
-      dataField: 'actions',
-      text: '',
-      formatter: (cell, row) => (
+      dataField: 'name',           // 사용자 이름
+      text: '이름',
+      sort: true
+    },
+    {
+      dataField: 'age',            // 사용자 나이
+      text: '나이',
+      formatter: (value) => `${value}세`,  // "25세" 형태로 출력
+      sort: true
+    },
+    {
+      dataField: 'sex',            // 사용자 성별
+      text: '성별',
+      sort: true
+    },
+    {
+      dataField: 'created_at',     // 가입일 (서버에서 제공하는 타임스탬프)
+      text: '가입일',
+      sort: true
+    },
+    {
+      dataField: 'actions',        // 사용자 삭제 버튼 영역
+      text: '',                    // 헤더에는 텍스트 없음
+      formatter: (cell, row) => (  // 각 행에 대해 삭제 버튼 렌더링
         <div className="d-flex justify-content-end gap-2">
           <Button variant="danger" size="sm" onClick={() => handleDeleteClick(row)}>
             삭제
           </Button>
         </div>
       ),
-      headerStyle: { width: '180px' },
-      align: 'center',
+      headerStyle: { width: '180px' },  // 고정 너비 설정
+      align: 'center'              // 셀 정렬 중앙
     },
   ];
 
+  // SHA-256 해시 함수 (비밀번호 변경에 사용)
   async function hashPassword(password) {
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
@@ -194,6 +222,7 @@ const MemberListPage = () => {
     return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
   }
 
+  // 관리자 비밀번호 변경 요청
   const handleChangePassword = async () => {
     try {
       const token = localStorage.getItem('access_token');
@@ -219,8 +248,10 @@ const MemberListPage = () => {
     }
   };
 
+  // 렌더링
   return (
     <div className="container mt-5">
+      {/* 상단 타이틀 및 버튼 */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="mb-0">회원 리스트</h2>
         <div>
@@ -236,6 +267,7 @@ const MemberListPage = () => {
         </div>
       </div>
 
+      {/* 회원 목록 테이블 */}
       <BootstrapTable
         keyField="id"
         data={members}
@@ -249,11 +281,13 @@ const MemberListPage = () => {
         noDataIndication="회원 정보가 없습니다."
       />
 
+      {/* 회원 등록 모달 */}
       <Modal show={showRegisterModal} onHide={handleCloseRegisterModal}>
         <Modal.Header closeButton>
           <Modal.Title>회원 아이디 발급</Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          {/* 등록 입력 폼 */}
           <Form>
             <Form.Group className="mb-3">
               <Form.Label>전화번호 (하이픈 없이 입력)</Form.Label>
@@ -301,12 +335,14 @@ const MemberListPage = () => {
           <Button variant="secondary" onClick={handleCloseRegisterModal}>
             취소
           </Button>
+          {/* 입력 정보 확인 모달로 전환 */}
           <Button variant="primary" onClick={() => setShowConfirmModal(true)}>
             확인
           </Button>
         </Modal.Footer>
       </Modal>
 
+      {/* 입력 정보 확인 모달 */}
       <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>입력 정보 확인</Modal.Title>
@@ -333,6 +369,7 @@ const MemberListPage = () => {
         </Modal.Footer>
       </Modal>
 
+      {/* 회원 삭제 확인 모달 */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>회원 삭제 확인</Modal.Title>
@@ -350,6 +387,7 @@ const MemberListPage = () => {
         </Modal.Footer>
       </Modal>
 
+      {/* 관리자 비밀번호 변경 모달 */}
       <Modal show={showAdminModal} onHide={() => setShowAdminModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>관리자 비밀번호 변경</Modal.Title>
