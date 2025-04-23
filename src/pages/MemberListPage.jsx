@@ -24,6 +24,8 @@ const MemberListPage = () => {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [oldPwd, setOldPwd] = useState('');
   const [newPwd, setNewPwd] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false); // 등록 중 여부
+
 
   const navigate = useNavigate();
 
@@ -69,6 +71,9 @@ const MemberListPage = () => {
   };
 
   const handleRegisterUser = async () => {
+    if (isRegistering) return; // 이미 등록 중이면 무시
+
+    setIsRegistering(true); // 등록 시작
     try {
       const token = localStorage.getItem('access_token');
       const plainPhone = newUser.login_id.replace(/-/g, '');
@@ -81,9 +86,6 @@ const MemberListPage = () => {
         sex: gender,
       };
 
-      console.log('access_token:', token);
-      console.log('등록 요청 데이터:', payload);
-
       await axios.post('https://api-hlp.o-r.kr/admin/user/register', payload, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -92,10 +94,12 @@ const MemberListPage = () => {
 
       alert('회원 등록 성공!');
       handleCloseRegisterModal();
-      fetchMembers();
+      await fetchMembers(); // 등록 후 응답받고 갱신
     } catch (error) {
       console.error('회원 등록 실패:', error);
       alert('회원 등록 실패');
+    } finally {
+      setIsRegistering(false); // 등록 완료
     }
   };
 
@@ -282,14 +286,17 @@ const MemberListPage = () => {
           <p><strong>성별:</strong> {newUser.sex}</p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>
-            취소
-          </Button>
-          <Button variant="primary" onClick={async () => {
-            await handleRegisterUser();
-            setShowConfirmModal(false);
-          }}>
-            등록
+          <Button
+            variant="primary"
+            onClick={async () => {
+              if (!isRegistering) {
+                await handleRegisterUser();
+                setShowConfirmModal(false);
+              }
+            }}
+            disabled={isRegistering}
+          >
+            {isRegistering ? '등록 중...' : '등록'}
           </Button>
         </Modal.Footer>
       </Modal>
