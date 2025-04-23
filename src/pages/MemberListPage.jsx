@@ -71,21 +71,53 @@ const MemberListPage = () => {
   };
 
   const handleRegisterUser = async () => {
-    if (isRegistering) return; // 이미 등록 중이면 무시
+    if (isRegistering) return;
+    setIsRegistering(true);
 
-    setIsRegistering(true); // 등록 시작
+    const plainPhone = newUser.login_id.replace(/-/g, '');
+
+    // 클라이언트 측 유효성 검사
+    if (!/^\d{10,11}$/.test(plainPhone)) {
+      alert('전화번호는 10~11자리 숫자여야 합니다.');
+      setIsRegistering(false);
+      return;
+    }
+    if (!newUser.name.trim()) {
+      alert('이름을 입력해주세요.');
+      setIsRegistering(false);
+      return;
+    }
+    if (!newUser.age || isNaN(newUser.age) || Number(newUser.age) <= 0) {
+      alert('올바른 나이를 입력해주세요.');
+      setIsRegistering(false);
+      return;
+    }
+    if (newUser.sex !== '남자' && newUser.sex !== '여자') {
+      alert('성별을 선택해주세요.');
+      setIsRegistering(false);
+      return;
+    }
+
+    // 중복 확인
+    const isDuplicate = members.some(
+      (user) => user.phone_number === plainPhone
+    );
+    if (isDuplicate) {
+      alert('이미 등록된 전화번호입니다.');
+      setIsRegistering(false);
+      return;
+    }
+
+    const token = localStorage.getItem('access_token');
+    const gender = newUser.sex === '남자' ? 'MAN' : 'WOMAN';
+    const payload = {
+      name: newUser.name,
+      phone_number: plainPhone,
+      age: Number(newUser.age),
+      sex: gender,
+    };
+
     try {
-      const token = localStorage.getItem('access_token');
-      const plainPhone = newUser.login_id.replace(/-/g, '');
-      const gender = newUser.sex === '남자' ? 'MAN' : 'WOMAN';
-
-      const payload = {
-        name: newUser.name,
-        phone_number: plainPhone,
-        age: Number(newUser.age),
-        sex: gender,
-      };
-
       await axios.post('https://api-hlp.o-r.kr/admin/user/register', payload, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -94,12 +126,12 @@ const MemberListPage = () => {
 
       alert('회원 등록 성공!');
       handleCloseRegisterModal();
-      await fetchMembers(); // 등록 후 응답받고 갱신
+      await fetchMembers();
     } catch (error) {
       console.error('회원 등록 실패:', error);
       alert('회원 등록 실패');
     } finally {
-      setIsRegistering(false); // 등록 완료
+      setIsRegistering(false);
     }
   };
 
