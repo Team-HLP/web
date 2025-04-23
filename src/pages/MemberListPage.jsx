@@ -199,17 +199,24 @@ const MemberListPage = () => {
       sort: true
     },
     {
-      dataField: 'actions',        // 사용자 삭제 버튼 영역
-      text: '',                    // 헤더에는 텍스트 없음
-      formatter: (cell, row) => (  // 각 행에 대해 삭제 버튼 렌더링
+      dataField: 'actions',
+      text: '',
+      formatter: (cell, row) => (
         <div className="d-flex justify-content-end gap-2">
-          <Button variant="danger" size="sm" onClick={() => handleDeleteClick(row)}>
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation(); // 상세 페이지 이동 방지
+              handleDeleteClick(row);
+            }}
+          >
             삭제
           </Button>
         </div>
       ),
-      headerStyle: { width: '180px' },  // 고정 너비 설정
-      align: 'center'              // 셀 정렬 중앙
+      headerStyle: { width: '180px' },
+      align: 'center',
     },
   ];
 
