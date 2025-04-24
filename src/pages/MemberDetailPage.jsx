@@ -43,6 +43,20 @@ const MemberDetailPage = () => {
     }
   }, [userId]);
 
+  // 전화번호 하이픈 포맷 함수
+  const formatPhoneNumber = (phone) => {
+    if (!phone) return '';
+    const numbersOnly = phone.replace(/\D/g, '');
+
+    if (numbersOnly.length === 10) {
+      return `${numbersOnly.slice(0, 3)}-${numbersOnly.slice(3, 6)}-${numbersOnly.slice(6)}`;
+    } else if (numbersOnly.length === 11) {
+      return `${numbersOnly.slice(0, 3)}-${numbersOnly.slice(3, 7)}-${numbersOnly.slice(7)}`;
+    } else {
+      return phone; // 원본 반환
+    }
+  };
+
   // 컴포넌트 마운트 시 회원 정보와 게임 기록 불러오기
   useEffect(() => {
     fetchUser();
@@ -69,7 +83,7 @@ const MemberDetailPage = () => {
           <Col><strong>이름:</strong> {user.name}</Col>
         </Row>
         <Row>
-          <Col><strong>전화번호:</strong> {user.phone_number}</Col>
+          <Col><strong>전화번호:</strong> {formatPhoneNumber(user.phone_number)}</Col>
           <Col><strong>나이:</strong> {user.age}세</Col>
         </Row>
         <Row>

@@ -75,7 +75,25 @@ const MemberListPage = () => {
   // 등록 폼 값 변경 핸들러
   const handleChangeNewUser = (e) => {
     const { name, value } = e.target;
-    setNewUser((prev) => ({ ...prev, [name]: value }));
+
+    // 전화번호 하이픈 자동 삽입 (login_id만)
+    if (name === 'login_id') {
+      // 숫자만 추출
+      const numbers = value.replace(/\D/g, '');
+
+      let formatted = numbers;
+      if (numbers.length < 4) {
+        formatted = numbers;
+      } else if (numbers.length < 7) {
+        formatted = `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+      } else if (numbers.length <= 11) {
+        formatted = `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
+      }
+
+      setNewUser((prev) => ({ ...prev, [name]: formatted }));
+    } else {
+      setNewUser((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   // 회원 등록 요청
@@ -303,7 +321,7 @@ const MemberListPage = () => {
                 name="login_id"
                 value={newUser.login_id}
                 onChange={handleChangeNewUser}
-                placeholder="01012345678"
+                placeholder="010-1234-5678"
               />
             </Form.Group>
             <Form.Group className="mb-3">
