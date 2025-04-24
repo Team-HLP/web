@@ -62,7 +62,14 @@ function LoginPage() {
 
       {/* 로그인 박스 */}
       <div id="loginBox">
-        <div id="inputBox">
+        {/* 폼 태그 추가 */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault(); // 새로고침 방지
+            handleLogin();      // 로그인 호출
+          }}
+          id="inputBox"
+        >
           {/* 아이디 입력 */}
           <div className="input-form-box">
             <span>아이디</span>
@@ -88,14 +95,13 @@ function LoginPage() {
           {/* 로그인 버튼 */}
           <div className="button-login-box">
             <button
-              type="button"
+              type="submit"  // type을 submit으로 변경
               className="btn btn-primary btn-xs w-100"
-              onClick={handleLogin}
             >
               로그인
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
