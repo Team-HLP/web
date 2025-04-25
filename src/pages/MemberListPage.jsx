@@ -28,7 +28,11 @@ const MemberListPage = () => {
   const [oldPwd, setOldPwd] = useState('');
   const [newPwd, setNewPwd] = useState('');
   const [isRegistering, setIsRegistering] = useState(false); // 중복 등록 방지
-
+  const [searchKeyword, setSearchKeyword] = useState(''); // 검색어 상태
+  const [filteredMembers, setFilteredMembers] = useState([]);
+  const [filterSex, setFilterSex] = useState('');
+  const [filterAgeMin, setFilterAgeMin] = useState('');
+  const [filterAgeMax, setFilterAgeMax] = useState('');
 
   const navigate = useNavigate();
 
@@ -43,6 +47,7 @@ const MemberListPage = () => {
     fetchMembers();
   }, []);
 
+
   // API로 회원 목록 가져오기
   const fetchMembers = async () => {
     try {
@@ -52,8 +57,8 @@ const MemberListPage = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log('회원 목록 응답:', response.data);
       setMembers(response.data);
+      setFilteredMembers(response.data); // 최초엔 전체 목록으로
     } catch (error) {
       console.error('회원 목록 불러오기 실패:', error);
     }
@@ -209,7 +214,7 @@ const MemberListPage = () => {
     {
       dataField: 'sex',            // 사용자 성별
       text: '성별',
-      sort: true
+      sort: true,
     },
     {
       dataField: 'created_at',     // 가입일 (서버에서 제공하는 타임스탬프)
@@ -273,6 +278,30 @@ const MemberListPage = () => {
     }
   };
 
+  // 필터 버튼 눌렀을 때만 필터링된 리스트 세팅
+  const handleSearch = () => {
+    const result = members.filter((user) => {
+      const matchesKeyword =
+        user.name.includes(searchKeyword) || user.login_id.includes(searchKeyword);
+      const matchesSex = filterSex === '' || user.sex === filterSex;
+      const matchesAgeMin = filterAgeMin === '' || user.age >= parseInt(filterAgeMin);
+      const matchesAgeMax = filterAgeMax === '' || user.age <= parseInt(filterAgeMax);
+      return matchesKeyword && matchesSex && matchesAgeMin && matchesAgeMax;
+    });
+
+    setFilteredMembers(result);
+  };
+
+  // 필터 초기화 함수
+  const handleResetFilter = () => {
+    setSearchKeyword('');
+    setFilterSex('');
+    setFilterAgeMin('');
+    setFilterAgeMax('');
+    setFilteredMembers(members); // 전체 목록 다시 보여줌
+  };
+
+
   // 렌더링
   return (
     <div className="container mt-5">
@@ -292,10 +321,29 @@ const MemberListPage = () => {
         </div>
       </div>
 
+      {/* 필터 영역 */}
+      <div className="mb-4">
+        <Form className="d-flex flex-wrap gap-2 align-items-center">
+          <Form.Control type="text" placeholder="이름 또는 ID" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} style={{ width: '180px' }} />
+          <Form.Select value={filterSex} onChange={(e) => setFilterSex(e.target.value)} style={{ width: '120px' }}>
+            <option value="">성별</option>
+            <option value="남">남자</option>
+            <option value="여">여자</option>
+          </Form.Select>
+          <Form.Control type="number" placeholder="최소 나이" value={filterAgeMin} onChange={(e) => setFilterAgeMin(e.target.value)} style={{ width: '100px' }} />
+          <span>~</span>
+          <Form.Control type="number" placeholder="최대 나이" value={filterAgeMax} onChange={(e) => setFilterAgeMax(e.target.value)} style={{ width: '100px' }} />
+          <Button variant="primary" onClick={handleSearch}>검색</Button>
+          <Button variant="outline-secondary" onClick={handleResetFilter}>
+            초기화
+          </Button>
+        </Form>
+      </div>
+
       {/* 회원 목록 테이블 */}
       <BootstrapTable
         keyField="id"
-        data={members}
+        data={filteredMembers}
         columns={columns}
         rowEvents={rowEvents}
         bordered={false}
