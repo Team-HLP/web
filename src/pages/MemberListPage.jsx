@@ -280,13 +280,20 @@ const MemberListPage = () => {
 
   // 필터 버튼 눌렀을 때만 필터링된 리스트 세팅
   const handleSearch = () => {
+    const keyword = searchKeyword.trim();               // 공백 제거
+    const minAge = filterAgeMin === '' ? 0 : Math.max(0, parseInt(filterAgeMin, 10));
+    const maxAge = filterAgeMax === '' ? Infinity : Math.max(minAge, parseInt(filterAgeMax, 10));
+
     const result = members.filter((user) => {
       const matchesKeyword =
-        user.name.includes(searchKeyword) || user.login_id.includes(searchKeyword);
+        keyword === '' ||
+        user.name.includes(keyword) ||
+        user.login_id.includes(keyword);
+
       const matchesSex = filterSex === '' || user.sex === filterSex;
-      const matchesAgeMin = filterAgeMin === '' || user.age >= parseInt(filterAgeMin);
-      const matchesAgeMax = filterAgeMax === '' || user.age <= parseInt(filterAgeMax);
-      return matchesKeyword && matchesSex && matchesAgeMin && matchesAgeMax;
+      const matchesAge = user.age >= minAge && user.age <= maxAge;
+
+      return matchesKeyword && matchesSex && matchesAge;
     });
 
     setFilteredMembers(result);
@@ -330,9 +337,15 @@ const MemberListPage = () => {
             <option value="남">남자</option>
             <option value="여">여자</option>
           </Form.Select>
-          <Form.Control type="number" placeholder="최소 나이" value={filterAgeMin} onChange={(e) => setFilterAgeMin(e.target.value)} style={{ width: '100px' }} />
+          <Form.Control type="number" placeholder="최소 나이" min="0" value={filterAgeMin} onChange={(e) => {
+            const v = e.target.value;
+            if (v === '' || Number(v) >= 0) setFilterAgeMin(v);   // 음수 차단
+          }} style={{ width: '100px' }} />
           <span>~</span>
-          <Form.Control type="number" placeholder="최대 나이" value={filterAgeMax} onChange={(e) => setFilterAgeMax(e.target.value)} style={{ width: '100px' }} />
+          <Form.Control type="number" placeholder="최대 나이" min="0" value={filterAgeMax} onChange={(e) => {
+            const v = e.target.value;
+            if (v === '' || Number(v) >= 0) setFilterAgeMax(v);   // 음수 차단
+          }} style={{ width: '100px' }} />
           <Button variant="primary" onClick={handleSearch}>검색</Button>
           <Button variant="outline-secondary" onClick={handleResetFilter}>
             초기화
@@ -386,6 +399,7 @@ const MemberListPage = () => {
               <Form.Control
                 type="number"
                 name="age"
+                min="0"
                 value={newUser.age}
                 onChange={handleChangeNewUser}
               />
