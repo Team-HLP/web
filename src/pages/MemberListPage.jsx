@@ -254,8 +254,8 @@ const MemberListPage = () => {
       const hashedOld = await hashPassword(oldPwd);
       const hashedNew = await hashPassword(newPwd);
 
-      await axios.put('https://api-hlp.o-r.kr/admin/password', {
-        old_password: hashedOld,
+      await axios.patch('https://api-hlp.o-r.kr/admin/password', {
+        cur_password: hashedOld,
         new_password: hashedNew,
       }, {
         headers: {
