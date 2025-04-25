@@ -95,7 +95,12 @@ const MemberDetailPage = () => {
       {/* 훈련 기록 섹션 제목 및 (예정된) 통계 보기 버튼 */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h5 className="mb-0">훈련 기록</h5>
-        <Button variant="outline-primary" size="sm" onClick={() => { /* TODO */ }}>
+        <Button
+          variant="outline-primary"
+          size="sm"
+          onClick={() => navigate(`/admin/member/${userId}/statistics`)}
+          // disabled={games.length === 0} /* 세션이 없으면 비활성화 */
+        >
           전체 통계 보기
         </Button>
       </div>
