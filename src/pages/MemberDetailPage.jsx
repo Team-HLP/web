@@ -99,7 +99,7 @@ const MemberDetailPage = () => {
           variant="outline-primary"
           size="sm"
           onClick={() => navigate(`/admin/member/${userId}/statistics`)}
-          // disabled={games.length === 0} /* 세션이 없으면 비활성화 */
+          disabled={games.length === 0} /* 세션이 없으면 비활성화 */
         >
           전체 통계 보기
         </Button>
