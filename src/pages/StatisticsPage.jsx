@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ResponsiveLine } from '@nivo/line';
-import SwipeableViews from 'react-swipeable-views';
 import {
   Container,
   Row,
@@ -19,11 +18,11 @@ const StatisticsPage = () => {
   const   navigate   = useNavigate();
 
   /* ---- 데이터 상태 ---- */
-  const [loading, setLoading]   = useState(true);
-  const [blink, setBlink]       = useState([]);
-  const [pupilL, setPupilL]     = useState([]);
-  const [pupilR, setPupilR]     = useState([]);
-  const [slideIdx, setSlideIdx] = useState(0);   // 0: 왼쪽, 1: 오른쪽
+  const [loading, setLoading] = useState(true);
+  const [blink , setBlink ] = useState([]);   // 눈깜빡임
+  const [pupilL, setPupilL] = useState([]);   // 왼쪽 동공
+  const [pupilR, setPupilR] = useState([]);   // 오른쪽 동공
+  const [showLeft, setShowLeft] = useState(true);   // true: 왼쪽, false: 오른쪽
 
   /* ---- 세션 불러오기 ---- */
   useEffect(() => {
@@ -39,20 +38,35 @@ const StatisticsPage = () => {
           (a, b) => new Date(a.created_at) - new Date(b.created_at)
         );
 
-        setBlink([{
-          id  : '눈깜빡임 수',
-          data: sorted.map(s => ({ x: s.created_at.slice(0,10), y: s.blink_eye_count })),
-        }]);
+        setBlink([
+          {
+            id  : '눈깜빡임 수',
+            data: sorted.map(s => ({
+              x: s.created_at.slice(0, 10),
+              y: s.blink_eye_count,
+            })),
+          },
+        ]);
 
-        setPupilL([{
-          id  : '왼쪽 동공 크기',
-          data: sorted.map(s => ({ x: s.created_at.slice(0,10), y: s.avg_left_eye_pupil_size })),
-        }]);
+        setPupilL([
+          {
+            id  : '왼쪽 동공 크기',
+            data: sorted.map(s => ({
+              x: s.created_at.slice(0, 10),
+              y: s.avg_left_eye_pupil_size,
+            })),
+          },
+        ]);
 
-        setPupilR([{
-          id  : '오른쪽 동공 크기',
-          data: sorted.map(s => ({ x: s.created_at.slice(0,10), y: s.avg_right_eye_pupil_size })),
-        }]);
+        setPupilR([
+          {
+            id  : '오른쪽 동공 크기',
+            data: sorted.map(s => ({
+              x: s.created_at.slice(0, 10),
+              y: s.avg_right_eye_pupil_size,
+            })),
+          },
+        ]);
       } catch (err) {
         console.error('세션 로드 실패', err);
       } finally {
@@ -112,22 +126,21 @@ const StatisticsPage = () => {
         </div>
       </Card>
 
-      {/* 2) 동공 크기 추이 – 스와이프 + 버튼 */}
+      {/* 2) 동공 크기 추이 – 토글 */}
       <Card className="p-4 mb-4">
         <Row className="mb-2">
           <Col><h5 className="mb-0">동공 크기 추이</h5></Col>
           <Col xs="auto">
-            {/* 토글 버튼 */}
             <ButtonGroup size="sm">
               <Button
-                variant={slideIdx === 0 ? 'primary' : 'outline-primary'}
-                onClick={() => setSlideIdx(0)}
+                variant={showLeft ? 'primary' : 'outline-primary'}
+                onClick={() => setShowLeft(true)}
               >
                 왼쪽
               </Button>
               <Button
-                variant={slideIdx === 1 ? 'primary' : 'outline-primary'}
-                onClick={() => setSlideIdx(1)}
+                variant={!showLeft ? 'primary' : 'outline-primary'}
+                onClick={() => setShowLeft(false)}
               >
                 오른쪽
               </Button>
@@ -135,43 +148,18 @@ const StatisticsPage = () => {
           </Col>
         </Row>
 
-        {/* 스와이프 영역 */}
-        <SwipeableViews
-          index={slideIdx}
-          onChangeIndex={setSlideIdx}
-          enableMouseEvents
-          resistance
-          containerStyle={{ height: 350 }}
-          slideStyle={{ padding: 0 }}
-        >
-          {/* 왼쪽 동공 */}
-          <div style={{ height: 350 }}>
-            <ResponsiveLine
-              data={pupilL}
-              {...common}
-              axisLeft={{
-                legend: '평균 동공 크기',
-                legendOffset: -50,
-                legendPosition: 'middle',
-              }}
-              colors={{ scheme: 'set2' }}
-            />
-          </div>
-
-          {/* 오른쪽 동공 */}
-          <div style={{ height: 350 }}>
-            <ResponsiveLine
-              data={pupilR}
-              {...common}
-              axisLeft={{
-                legend: '평균 동공 크기',
-                legendOffset: -50,
-                legendPosition: 'middle',
-              }}
-              colors={{ scheme: 'set2' }}
-            />
-          </div>
-        </SwipeableViews>
+        <div style={{ height: 350, overflow: 'visible' }}>
+          <ResponsiveLine
+            data={showLeft ? pupilL : pupilR}
+            {...common}
+            axisLeft={{
+              legend: '평균 동공 크기',
+              legendOffset: -50,
+              legendPosition: 'middle',
+            }}
+            colors={{ scheme: 'set2' }}
+          />
+        </div>
       </Card>
     </Container>
   );
