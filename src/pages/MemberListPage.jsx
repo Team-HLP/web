@@ -308,6 +308,13 @@ const MemberListPage = () => {
     setFilteredMembers(members); // 전체 목록 다시 보여줌
   };
 
+  // 엔터키로 검색함수 호출
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSearch(); 
+    }
+  };
 
   // 렌더링
   return (
@@ -330,7 +337,10 @@ const MemberListPage = () => {
 
       {/* 필터 영역 */}
       <div className="mb-4">
-        <Form className="d-flex flex-wrap gap-2 align-items-center">
+        <Form
+          className="d-flex flex-wrap gap-2 align-items-center"
+          onKeyDown={handleKeyDown}
+        >
           <Form.Control type="text" placeholder="이름 또는 ID" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} style={{ width: '180px' }} />
           <Form.Select value={filterSex} onChange={(e) => setFilterSex(e.target.value)} style={{ width: '120px' }}>
             <option value="">성별</option>
