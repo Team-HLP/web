@@ -29,17 +29,17 @@ const MemberDetailPage = () => {
     }
   }, [userId]);
 
-  // 게임(훈련) 기록 불러오기 함수
+  // 게임(세션) 리스트 불러오기
   const fetchGames = useCallback(async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const res = await axios.get(`https://api-hlp.o-r.kr/admin/game`, {
+      const res = await axios.get('https://api-hlp.o-r.kr/admin/game', {
         headers: { Authorization: `Bearer ${token}` },
         params: { user_id: userId },
       });
-      setGames(res.data);
-    } catch (error) {
-      console.error('게임 정보 불러오기 실패:', error);
+      setGames(res.data);            // id, category, created_at 필드만 넘어옴
+    } catch (err) {
+      console.error('게임 정보 불러오기 실패:', err);
     }
   }, [userId]);
 
@@ -105,32 +105,31 @@ const MemberDetailPage = () => {
         </Button>
       </div>
 
-      {/* 훈련 기록 카드 목록 (없을 경우 메시지 출력) */}
+      {/* ▶ 세션 카드 렌더링 */}
       {games.length === 0 ? (
         <p>등록된 훈련 정보가 없습니다.</p>
       ) : (
-        games.map((game, idx) => (
+        games.map(game => (
           <Card
-            key={idx}
+            key={game.id}
             className="mb-3 p-3"
             style={{
               cursor: 'pointer',
-              transition: 'transform 0.1s ease-in-out, box-shadow 0.2s ease',
+              transition: 'transform .1s, box-shadow .2s',
             }}
-            // 클릭 시 해당 세션 상세 페이지로 이동
             onClick={() => navigate(`/admin/member/${userId}/session/${game.id}`)}
-            // 카드 마우스 hover 효과
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            onMouseEnter={e => {
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.15)';
               e.currentTarget.style.transform = 'scale(1.02)';
             }}
-            onMouseLeave={(e) => {
+            onMouseLeave={e => {
               e.currentTarget.style.boxShadow = 'none';
               e.currentTarget.style.transform = 'scale(1)';
             }}
           >
             <Row className="align-items-center">
-              <Col><strong>훈련 번호:</strong> {game.id}</Col>
+              <Col><strong>세션 ID:</strong> {game.id}</Col>
+              <Col><strong>카테고리:</strong> {game.category || '미분류'}</Col>
               <Col><strong>진행 시간:</strong> {new Date(game.created_at).toLocaleString('ko-KR')}</Col>
             </Row>
           </Card>
