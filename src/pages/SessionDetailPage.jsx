@@ -9,7 +9,6 @@ import {
 import '../styles/EyeCircle.css';
 
 /* ────────────────────── 상수 ────────────────────── */
-const WINDOW = 20;          // pupil 이동평균 구간
 const EEG_BANDS = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
 const EEG_COLORS = {
   delta: '#1f77b4',
@@ -42,6 +41,8 @@ export default function SessionDetailPage() {
   const { userId, gameId } = useParams();
   const navigate = useNavigate();
   const [gameData, setGameData] = useState(null);
+  const [windowSize, setWindowSize] = useState(20); // 기본값 20         // pupil 이동평균 구간
+
 
   /* pupil-zoom 모달 */
   const [zoom, setZoom] = useState({
@@ -79,11 +80,11 @@ export default function SessionDetailPage() {
   if (!gameData) return <div className="container mt-5">세션 정보를 불러오는 중...</div>;
 
   /* ───── pupil util : 이동 평균 ───── */
-  const smooth = (records, key /* 'left' | 'right' */) => {
+  const smooth = (records, key) => {
     if (!records?.length) return [];
     const buckets = [];
     records.forEach((r, i) => {
-      const b = Math.floor(i / WINDOW);
+      const b = Math.floor(i / windowSize);  // ← 여기서 상태값 사용
       if (!buckets[b]) buckets[b] = { t: 0, v: 0, c: 0 };
       buckets[b].t += r.time_stamp;
       buckets[b].v += r.pupil_size[key];
@@ -141,7 +142,7 @@ export default function SessionDetailPage() {
     if (!slice?.points?.length) return;
 
     const center = slice.points[0].data.x;
-    const half = WINDOW / 2;
+    const half = windowSize / 2;
     const minT = center - half;
     const maxT = center + half;
 
@@ -221,6 +222,16 @@ export default function SessionDetailPage() {
             플레이 시간 : {gameData.played_at ?? gameData.created_at ?? 'N/A'}
           </Col>
         </Row>
+        <div className="d-flex align-items-center justify-content-end mb-2">
+          <label className="me-2 fw-semibold">평활 구간:</label>
+          <Form.Control
+            type="number"
+            value={windowSize}
+            onChange={(e) => setWindowSize(Number(e.target.value))}
+            style={{ width: '80px' }}
+            min={1}
+          />
+        </div>
 
         {/* pupil 그래프 */}
         <div className="graph-stack">
