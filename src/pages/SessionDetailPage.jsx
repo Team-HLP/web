@@ -204,7 +204,6 @@ export default function SessionDetailPage() {
               EEG CSV
             </Button>
           </ButtonGroup>
-          <Button variant="secondary" onClick={() => navigate(-1)}>뒤로 가기</Button>
         </Col>
         <Col xs="auto">
           <Button variant="secondary" onClick={() => navigate(-1)}>뒤로 가기</Button>
