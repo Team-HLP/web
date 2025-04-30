@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ResponsiveLine } from '@nivo/line';
 import {
-  Button, Card, Container, Row, Col, Modal, Form,
+  Button, Card, Container, Row, Col, Modal, Form, ButtonGroup
 } from 'react-bootstrap';
 import '../styles/EyeCircle.css';
 
@@ -19,6 +19,23 @@ const EEG_COLORS = {
   gamma: '#9467bd',
 };
 /* ──────────────────────────────────────────────── */
+
+/* ──────────────────────── CSV 다운로드 util ──────────────────────── */
+const makeCSVandDownload = (filename, headerArr, rowsArr) => {
+  const csv = [headerArr, ...rowsArr].map(line => line.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+/* ──────────────────────────────────────────────────────────────── */
+
 
 export default function SessionDetailPage() {
   /* ───── 기본 state ───── */
@@ -37,7 +54,7 @@ export default function SessionDetailPage() {
 
   /* EEG 표시 여부 토글 */
   const [eegVisible, setEegVisible] = useState(
-    EEG_BANDS.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
+    EEG_BANDS.reduce((obj, k, idx) => ({ ...obj, [k]: idx === 0 }), {})
   );
 
   /* ───── 세션 데이터 로드 ───── */
@@ -141,12 +158,54 @@ export default function SessionDetailPage() {
     });
   };
 
+  /* ───── CSV 핸들러 ───── */
+  const downloadPupilCSV = () => {
+    const rows = (gameData.eye_data?.pupil_records ?? []).map(r => [
+      r.time_stamp,
+      r.pupil_size.left,
+      r.pupil_size.right,
+    ]);
+    makeCSVandDownload(
+      `session_${gameId}_pupil.csv`,
+      ['time_stamp', 'left_pupil', 'right_pupil'],
+      rows
+    );
+  };
+
+  const downloadEegCSV = () => {
+    const rows = (gameData.eeg_data ?? []).map(d => [
+      d.time_stamp,
+      d.delta,
+      d.theta,
+      d.alpha,
+      d.beta,
+      d.gamma,
+    ]);
+    makeCSVandDownload(
+      `session_${gameId}_eeg.csv`,
+      ['time_stamp', ...EEG_BANDS],
+      rows
+    );
+  };
+
   /* ───── UI 렌더 ───── */
   return (
     <Container className="mt-5">
       {/* 헤더 */}
       <Row className="mb-4 align-items-center justify-content-between">
         <Col><h2>훈련 세션 조회</h2></Col>
+        {/* ▼ CSV 다운로드 버튼 그룹 추가 ▼ */}
+        <Col xs="auto">
+          <ButtonGroup className="me-2">
+            <Button variant="outline-success" size="sm" onClick={downloadPupilCSV}>
+              Pupil CSV
+            </Button>
+            <Button variant="outline-info" size="sm" onClick={downloadEegCSV}>
+              EEG CSV
+            </Button>
+          </ButtonGroup>
+          <Button variant="secondary" onClick={() => navigate(-1)}>뒤로 가기</Button>
+        </Col>
         <Col xs="auto">
           <Button variant="secondary" onClick={() => navigate(-1)}>뒤로 가기</Button>
         </Col>
