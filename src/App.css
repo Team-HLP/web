@@ -42,3 +42,9 @@ body.login-background {
     transform: rotate(360deg);
   }
 }
+
+.graph-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;      /* <- 그래프 사이 여백 조절 */
+}
