@@ -1,11 +1,24 @@
+// src/pages/SessionDetailPage.jsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ResponsiveLine } from '@nivo/line';
-import { Button, Card, Container, Row, Col, Modal } from 'react-bootstrap';
+import {
+  Button, Card, Container, Row, Col, Modal, Form,
+} from 'react-bootstrap';
 import '../styles/EyeCircle.css';
 
-const WINDOW = 20; // 이동평균 구간(데이터 20개씩)
+/* ────────────────────── 상수 ────────────────────── */
+const WINDOW = 20;          // pupil 이동평균 구간
+const EEG_BANDS = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
+const EEG_COLORS = {
+  delta: '#1f77b4',
+  theta: '#ff7f0e',
+  alpha: '#2ca02c',
+  beta: '#d62728',
+  gamma: '#9467bd',
+};
+/* ──────────────────────────────────────────────── */
 
 export default function SessionDetailPage() {
   /* ───── 기본 state ───── */
@@ -13,14 +26,19 @@ export default function SessionDetailPage() {
   const navigate = useNavigate();
   const [gameData, setGameData] = useState(null);
 
-  /* zoom 모달 상태 (※ Hook 최상단 위치!) */
+  /* pupil-zoom 모달 */
   const [zoom, setZoom] = useState({
     show: false,
-    side: 'left',   // 'left' | 'right'
+    side: 'left',        // 'left' | 'right'
     data: [],
     baseline: 0,
     range: [0, 0],
   });
+
+  /* EEG 표시 여부 토글 */
+  const [eegVisible, setEegVisible] = useState(
+    EEG_BANDS.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
+  );
 
   /* ───── 세션 데이터 로드 ───── */
   useEffect(() => {
@@ -32,20 +50,18 @@ export default function SessionDetailPage() {
           {
             headers: { Authorization: `Bearer ${token}` },
             params: { user_id: userId }
-          }
+          },
         );
         setGameData(data);
-      } catch (e) {
-        console.error('세션 로드 실패', e);
+      } catch (err) {
+        console.error('세션 로드 실패', err);
       }
     })();
   }, [userId, gameId]);
 
-  if (!gameData) {
-    return <div className="container mt-5">세션 정보를 불러오는 중...</div>;
-  }
+  if (!gameData) return <div className="container mt-5">세션 정보를 불러오는 중...</div>;
 
-  /* ───── util : 이동평균 ───── */
+  /* ───── pupil util : 이동 평균 ───── */
   const smooth = (records, key /* 'left' | 'right' */) => {
     if (!records?.length) return [];
     const buckets = [];
@@ -62,7 +78,7 @@ export default function SessionDetailPage() {
     }));
   };
 
-  /* ───── 그래프 데이터 ───── */
+  /* ───── pupil 그래프 데이터 ───── */
   const rec = gameData.eye_data?.pupil_records ?? [];
   const baseline = gameData.eye_data?.base_pupil_size ?? {};
 
@@ -78,7 +94,19 @@ export default function SessionDetailPage() {
     { id: '왼쪽 기준', data: leftSmooth.map(d => ({ ...d, y: baseline.left ?? 0 })) },
   ];
 
-  /* 공통 옵션 */
+  /* ───── EEG 그래프 데이터 ───── */
+  const eegLines = EEG_BANDS
+    .map(band => ({
+      id: band,
+      color: EEG_COLORS[band],
+      data: (gameData.eeg_data ?? []).map(d => ({
+        x: d.time_stamp,
+        y: d[band],
+      })),
+    }))
+    .filter(line => eegVisible[line.id]);   // 토글 반영
+
+  /* ───── 공통 Nivo 옵션 ───── */
   const common = {
     margin: { top: 10, right: 50, bottom: 40, left: 50 },
     xScale: { type: 'linear' },
@@ -88,15 +116,14 @@ export default function SessionDetailPage() {
     pointSize: 0,
     curve: 'monotoneX',
     lineWidth: 1.5,
-    colors: { scheme: 'category10' },
     useMesh: true,
   };
 
-  /* ───── 확대 모달 열기 ───── */
+  /* ───── pupil 확대 모달 열기 ───── */
   const openZoom = side => slice => {
-    if (!slice?.points?.length) return;          // 안전 장치
+    if (!slice?.points?.length) return;
 
-    const center = slice.points[0].data.x;       // ← slice 로부터 x 값 추출
+    const center = slice.points[0].data.x;
     const half = WINDOW / 2;
     const minT = center - half;
     const maxT = center + half;
@@ -137,7 +164,7 @@ export default function SessionDetailPage() {
           </Col>
         </Row>
 
-        {/* 그래프 */}
+        {/* pupil 그래프 */}
         <div className="graph-stack">
           <div style={{ height: 250 }}>
             <h6 className="text-center mb-2">오른쪽 동공 크기 (평활)</h6>
@@ -146,6 +173,7 @@ export default function SessionDetailPage() {
               data={rightGraphData}
               enableSlices="x"
               onClick={openZoom('right')}
+              colors={{ scheme: 'category10' }}
             />
           </div>
 
@@ -156,42 +184,76 @@ export default function SessionDetailPage() {
               data={leftGraphData}
               enableSlices="x"
               onClick={openZoom('left')}
+              colors={{ scheme: 'category10' }}
             />
           </div>
         </div>
 
-        {/* 뇌파 placeholder */}
-        <Row>
+        {/* ─── EEG 토글 & 그래프 ─── */}
+        <Row className="mt-4">
           <Col>
-            <div style={{
-              height: 300, background: '#f1f1f1',
-              display: 'flex', justifyContent: 'center', alignItems: 'center'
-            }}>
-              <span>뇌파 그래프 (추후 연동)</span>
-            </div>
+            {/* 토글 스위치 */}
+            <Form>
+              <div className="d-flex flex-wrap gap-3 mb-2">
+                {EEG_BANDS.map(band => (
+                  <Form.Check
+                    key={band}
+                    type="switch"
+                    id={`toggle-${band}`}
+                    label={band.toUpperCase()}
+                    checked={eegVisible[band]}
+                    onChange={() =>
+                      setEegVisible(v => ({ ...v, [band]: !v[band] }))
+                    }
+                    style={{ color: EEG_COLORS[band], fontWeight: 500 }}
+                  />
+                ))}
+              </div>
+            </Form>
+
+            {/* EEG 그래프 */}
+            {eegLines.length ? (
+              <div style={{ height: 300 }}>
+                <ResponsiveLine
+                  {...common}
+                  data={eegLines}
+                  axisLeft={{ ...common.axisLeft, legend: '전압(μV)' }}
+                  colors={({ id }) => EEG_COLORS[id]}
+                />
+              </div>
+            ) : (
+              <div className="text-muted py-4 text-center">
+                표시할 EEG 밴드가 없습니다.
+              </div>
+            )}
           </Col>
         </Row>
       </Card>
 
-      {/* 확대 모달 */}
-      <Modal show={zoom.show} size="lg"
-        onHide={() => setZoom(z => ({ ...z, show: false }))}>
+      {/* pupil 확대 모달 */}
+      <Modal
+        show={zoom.show}
+        size="lg"
+        onHide={() => setZoom(z => ({ ...z, show: false }))}
+      >
         <Modal.Header closeButton>
           <Modal.Title>
-            {zoom.side === 'left' ? '왼쪽' : '오른쪽'} 동공 RAW 확대
-            &nbsp;·&nbsp; t ≈ {zoom.range[0]} – {zoom.range[1]}
+            {zoom.side === 'left' ? '왼쪽' : '오른쪽'} 동공 RAW 확대&nbsp;·&nbsp;t ≈{' '}
+            {zoom.range[0]} – {zoom.range[1]}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <div style={{ height: 300 }}>
             <ResponsiveLine
               {...common}
+              /* x 축을 확대 범위로 고정 */
               xScale={{ type: 'linear', min: zoom.range[0], max: zoom.range[1] }}
               pointSize={3}
               data={[
                 { id: 'raw', data: zoom.data },
                 { id: 'baseline', data: zoom.data.map(d => ({ ...d, y: zoom.baseline })) },
               ]}
+              colors={({ id }) => (id === 'raw' ? '#1f77b4' : '#ff7f0e')}
             />
           </div>
         </Modal.Body>
