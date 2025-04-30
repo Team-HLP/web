@@ -110,11 +110,11 @@ const SessionDetailPage = () => {
                   className="eye-pupil"
                   ref={leftPupilRef}
                   style={{
-                    width: `${gameData.avg_left_eye_pupil_size * 18}px`,
-                    height: `${gameData.avg_left_eye_pupil_size * 18}px`,
+                    width: `${(gameData.eye_data?.base_pupil_size?.left ?? 0) * 15}px`,
+                    height: `${(gameData.eye_data?.base_pupil_size?.left ?? 0) * 15}px`,
                   }}
                 >
-                  {gameData.avg_left_eye_pupil_size}
+                  {gameData.eye_data?.base_pupil_size?.left ?? 'N/A'}
                 </div>
               </div>
             </div>
@@ -134,12 +134,13 @@ const SessionDetailPage = () => {
                   className="eye-pupil"
                   ref={rightPupilRef}
                   style={{
-                    width: `${gameData.avg_right_eye_pupil_size * 18}px`,
-                    height: `${gameData.avg_right_eye_pupil_size * 18}px`,
+                    width: `${(gameData.eye_data?.base_pupil_size?.right ?? 0) * 15}px`,
+                    height: `${(gameData.eye_data?.base_pupil_size?.right ?? 0) * 15}px`,
                   }}
                 >
-                  {gameData.avg_right_eye_pupil_size}
+                  {gameData.eye_data?.base_pupil_size?.right ?? 'N/A'}
                 </div>
+
               </div>
             </div>
           </Col>
@@ -148,7 +149,9 @@ const SessionDetailPage = () => {
           <Col>
             <div style={{ fontSize: '0.9rem' }}>총 눈깜빡임 수</div>
             <div style={{ height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <h4 style={{ margin: 0 }}>{gameData.blink_eye_count}</h4>
+              <h4 style={{ margin: 0 }}>
+                {gameData.eye_data?.blink_eye_count ?? 'N/A'}
+              </h4>
             </div>
           </Col>
         </Row>
