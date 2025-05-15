@@ -47,7 +47,7 @@ export default function SessionDetailPage() {
   const navigate = useNavigate();
 
   const [gameData, setGameData] = useState(null);
-  const [windowSize, setWindowSize] = useState(20); // pupil smooth 구간
+  const [windowSize, setWindowSize] = useState(5); // pupil smooth 구간
   const [eegWindow, setEegWindow] = useState(5);   // EEG  smooth 구간
 
   /* pupil 확대 모달 ---------------------------------------------- */
