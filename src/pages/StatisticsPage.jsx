@@ -17,16 +17,14 @@ const StatisticsPage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
 
-  /* ---- 데이터 상태 ---- */
   const [loading, setLoading] = useState(true);
-  const [rawData, setRawData] = useState([]);   // API로 받아온 정렬된 원본 데이터
+  const [rawData, setRawData] = useState([]);
   const [blink, setBlink] = useState([]);
   const [pupilL, setPupilL] = useState([]);
   const [pupilR, setPupilR] = useState([]);
   const [tbr, setTbr] = useState([]);
   const [showLeft, setShowLeft] = useState(true);
 
-  /* ---- CSV util ---- */
   const makeCSVandDownload = (filename, headerArr, rowsArr) => {
     const csv = [headerArr, ...rowsArr]
       .map(line => line.join(','))
@@ -42,7 +40,6 @@ const StatisticsPage = () => {
     URL.revokeObjectURL(url);
   };
 
-  /* ---- 다운로드 핸들러 ---- */
   const downloadBlinkCSV = () => {
     const rows = rawData.map(item => [
       item.created_at,
@@ -80,7 +77,6 @@ const StatisticsPage = () => {
     );
   };
 
-  /* ---- 세션 통계 불러오기 ---- */
   useEffect(() => {
     (async () => {
       try {
@@ -93,61 +89,65 @@ const StatisticsPage = () => {
           }
         );
 
-        // 날짜순 정렬
         const sorted = [...data].sort(
           (a, b) => new Date(a.created_at) - new Date(b.created_at)
         );
         setRawData(sorted);
 
-        // 눈깜빡임
+        // ✅ 통계 데이터 세팅 예시
         setBlink([
           {
             id: '눈깜빡임 수',
-            data: sorted.map(item => ({
-              x: item.created_at.slice(0, 10),
-              y: item.eye_blink_count,
-              fullDate: item.created_at,
-              rawValue: item.eye_blink_count,
-            })),
+            data: sorted
+              .filter(item => item.created_at) // null 방지
+              .map(item => ({
+                x: new Date(item.created_at),
+                y: item.eye_blink_count,
+                fullDate: item.created_at,
+                rawValue: item.eye_blink_count,
+              })),
           },
         ]);
 
-        // 왼쪽 동공
         setPupilL([
           {
             id: '왼쪽 동공 크기',
-            data: sorted.map(item => ({
-              x: item.created_at.slice(0, 10),
-              y: item.avg_eye_pupil_size.left,
-              fullDate: item.created_at,
-              rawValue: item.avg_eye_pupil_size.left,
-            })),
+            data: sorted
+              .filter(item => item.created_at)
+              .map(item => ({
+                x: new Date(item.created_at),
+                y: item.avg_eye_pupil_size.left,
+                fullDate: item.created_at,
+                rawValue: item.avg_eye_pupil_size.left,
+              })),
           },
         ]);
 
-        // 오른쪽 동공
         setPupilR([
           {
             id: '오른쪽 동공 크기',
-            data: sorted.map(item => ({
-              x: item.created_at.slice(0, 10),
-              y: item.avg_eye_pupil_size.right,
-              fullDate: item.created_at,
-              rawValue: item.avg_eye_pupil_size.right,
-            })),
+            data: sorted
+              .filter(item => item.created_at)
+              .map(item => ({
+                x: new Date(item.created_at),
+                y: item.avg_eye_pupil_size.right,
+                fullDate: item.created_at,
+                rawValue: item.avg_eye_pupil_size.right,
+              })),
           },
         ]);
 
-        // TBR 점수
         setTbr([
           {
             id: 'TBR 점수',
-            data: sorted.map(item => ({
-              x: item.created_at.slice(0, 10),
-              y: item.tbrconversion_score,
-              fullDate: item.created_at,
-              rawValue: item.tbrconversion_score,
-            })),
+            data: sorted
+              .filter(item => item.created_at)
+              .map(item => ({
+                x: new Date(item.created_at),
+                y: item.tbrconversion_score,
+                fullDate: item.created_at,
+                rawValue: item.tbrconversion_score,
+              })),
           },
         ]);
       } catch (err) {
@@ -156,25 +156,28 @@ const StatisticsPage = () => {
         setLoading(false);
       }
     })();
-  }, [userId]);
+  }, [userId, navigate]);
 
-  /* ---- 공통 Nivo 옵션 ---- */
   const common = {
     margin: { top: 40, right: 30, bottom: 70, left: 60 },
-    xScale: { type: 'point' },
+    xScale: {
+      type: 'time',
+      format: '%Y-%m-%dT%H:%M:%S',
+      precision: 'minute',
+    },
     yScale: { type: 'linear', min: 'auto', max: 'auto', stacked: false },
     pointSize: 8,
     pointBorderWidth: 2,
     useMesh: true,
     axisBottom: {
+      format: '%m-%d %H:%M',
       tickRotation: -45,
-      legend: '날짜',
+      legend: '시간',
       legendOffset: 50,
       legendPosition: 'middle',
     },
   };
 
-  /* ---- 커스텀 툴팁 ---- */
   const Tooltip = ({ point }) => (
     <div
       style={{
@@ -186,7 +189,7 @@ const StatisticsPage = () => {
     >
       <div><strong>{point.serieId}</strong></div>
       <div>전체 시간: {point.data.fullDate}</div>
-      <div>날짜: {point.data.x}</div>
+      <div>날짜: {point.data.xFormatted}</div>
       <div>값: {point.data.rawValue}</div>
     </div>
   );
@@ -201,7 +204,6 @@ const StatisticsPage = () => {
 
   return (
     <Container className="mt-5 pb-5">
-      {/* 헤더 */}
       <Row className="mb-4 align-items-center justify-content-between">
         <Col><h2>회원 {userId} – 전체 통계</h2></Col>
         <Col xs="auto">
@@ -222,7 +224,6 @@ const StatisticsPage = () => {
         </Col>
       </Row>
 
-      {/* 1) 눈깜빡임 추이 */}
       <Card className="p-4 mb-4">
         <h5 className="mb-3">눈깜빡임 추이</h5>
         <div style={{ height: 350 }}>
@@ -240,7 +241,6 @@ const StatisticsPage = () => {
         </div>
       </Card>
 
-      {/* 2) 동공 크기 추이 (토글) */}
       <Card className="p-4 mb-4">
         <Row className="mb-2 align-items-center">
           <Col><h5 className="mb-0">동공 크기 추이</h5></Col>
@@ -261,7 +261,7 @@ const StatisticsPage = () => {
             </ButtonGroup>
           </Col>
         </Row>
-        <div style={{ height: 350, overflow: 'visible' }}>
+        <div style={{ height: 350 }}>
           <ResponsiveLine
             data={showLeft ? pupilL : pupilR}
             {...common}
@@ -276,7 +276,6 @@ const StatisticsPage = () => {
         </div>
       </Card>
 
-      {/* 3) TBR 점수 추이 */}
       <Card className="p-4 mb-4">
         <h5 className="mb-3">TBR 점수 추이</h5>
         <div style={{ height: 350 }}>
