@@ -15,12 +15,12 @@ import {
 import '../styles/EyeCircle.css';
 
 /* ───────── 상수 ───────── */
-const EEG_BANDS  = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
+const EEG_BANDS = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
 const EEG_COLORS = {
   delta: '#1f77b4',  // 파랑
   theta: '#ffa600',  // 주황 
   alpha: '#2ca02c',  // 녹색
-  beta : '#17becf',  // 청록           \
+  beta: '#17becf',  // 청록           \
   gamma: '#9467bd',  // 보라
 };
 /* ─────────────────────── */
@@ -66,13 +66,13 @@ export default function SessionDetailPage() {
     range: [0, 0],
   });
 
-/* EEG 표시 토글 (theta·beta 기본 ON) ---------------------------- */
-const [eegVisible, setEegVisible] = useState(
-  EEG_BANDS.reduce(
-    (acc, band) => ({ ...acc, [band]: band === 'theta' || band === 'beta' }),
-    {},
-  )
-);
+  /* EEG 표시 토글 (theta·beta 기본 ON) ---------------------------- */
+  const [eegVisible, setEegVisible] = useState(
+    EEG_BANDS.reduce(
+      (acc, band) => ({ ...acc, [band]: band === 'theta' || band === 'beta' }),
+      {},
+    )
+  );
 
   /* 세션 데이터 로드 --------------------------------------------- */
   useEffect(() => {
@@ -81,14 +81,32 @@ const [eegVisible, setEegVisible] = useState(
         const token = localStorage.getItem('access_token');
         const { data } = await axios.get(
           `https://api-hlp.o-r.kr/admin/game/${gameId}`,
-          { headers: { Authorization: `Bearer ${token}` }, params: { user_id: userId } }
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { user_id: userId },
+          }
         );
         setGameData(data);
       } catch (e) {
         console.error('세션 로드 실패', e);
+
+        // 사용자에게 안내 메시지
+        if (e.response?.status === 500) {
+          alert('서버 오류가 발생했습니다. 나중에 다시 시도해주세요.');
+        } else if (e.response?.status === 404) {
+          alert('해당 세션 정보를 찾을 수 없습니다.');
+        } else if (e.response?.status === 401) {
+          alert('인증이 만료되었습니다. 다시 로그인해주세요.');
+          navigate('/login'); // 로그인 페이지로 이동 등 처리
+        } else {
+          alert('세션 정보를 불러오는데 실패했습니다.');
+        }
+
+        // 실패 시 기본 상태로 초기화
+        setGameData(null);
       }
     })();
-  }, [userId, gameId]);
+  }, [userId, gameId, navigate]);
 
   if (!gameData)
     return <div className="container mt-5">세션 정보를 불러오는 중...</div>;
