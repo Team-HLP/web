@@ -105,7 +105,7 @@ const BioStatisticsPage = () => {
                 <div style={{ height: 140 }}>
                   <ResponsiveRadialBar
                     data={[{ id: k, data: [{ x: '', y: latest[k] }] }]}
-                    maxValue={36}
+                    maxValue={27}
                     startAngle={-90}
                     endAngle={90}
                     innerRadius={0.55}
