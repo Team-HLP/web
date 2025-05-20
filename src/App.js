@@ -10,6 +10,7 @@ import MemberListPage from './pages/MemberListPage';
 import MemberDetailPage from './pages/MemberDetailPage';
 import SessionDetailPage from './pages/SessionDetailPage';
 import StatisticsPage from './pages/StatisticsPage';
+import BioStatisticsPage from './pages/BioStatisticsPage';
 
 // 인증이 필요한 페이지에 접근할 때 로그인 여부 확인
 const RequireAuth = ({ children }) => {
@@ -62,6 +63,11 @@ const App = () => {
               <StatisticsPage />
             </RequireAuth>
           }
+        />
+
+        <Route
+          path="/admin/user/:userId/bio"
+          element={<BioStatisticsPage />}
         />
       </Routes>
     </Router>

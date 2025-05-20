@@ -103,6 +103,10 @@ const MemberDetailPage = () => {
         >
           전체 통계 보기
         </Button>
+        <Button variant="outline-primary" size="sm"
+          onClick={() => navigate(`/admin/user/${userId}/bio`)}>
+          종합 ADHD 점수
+        </Button>
       </div>
 
       {/* ▶ 세션 카드 렌더링 */}
