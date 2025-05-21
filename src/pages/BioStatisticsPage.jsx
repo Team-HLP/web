@@ -1,10 +1,10 @@
 // src/pages/BioStatisticsPage.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Fragment } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   Container, Row, Col, Card,
-  Button, Spinner, Badge,
+  Button, Spinner, Badge, Form,
 } from 'react-bootstrap';
 import { ResponsiveRadialBar } from '@nivo/radial-bar';
 import { ResponsiveLine } from '@nivo/line';
@@ -15,30 +15,36 @@ const BioStatisticsPage = () => {
   const { userId } = useParams();
   const navigate  = useNavigate();
 
-  const [scores, setScores] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState(null);
+  const [scores, setScores]             = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState(null);
+  const [selectedIdx, setIdx]           = useState(null);
+  const [showImpulse, setShowImpulse]   = useState(true);
+  const [showConcentration, setShowConcentration] = useState(true);
 
-  /* ─── 색상 유틸 ─── */
   const getScoreColor = v => (v >= 36 ? '#4ade80' : v >= 18 ? '#fbbf24' : '#f87171');
-
-  const statusTheme = {
+  const statusTheme   = {
     정상: { fg: '#16a34a', bg: '#ecfdf5' },
     주의: { fg: '#d97706', bg: '#fffbeb' },
     위험: { fg: '#dc2626', bg: '#fef2f2' },
   };
 
-  /* ─── 데이터 요청 ─── */
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        const token = localStorage.getItem('access_token');
+        const token  = localStorage.getItem('access_token');
         const { data } = await axios.get(
           `${API_BASE}/admin/game/statistics/bio`,
-          { params: { user_id: userId }, headers: { Authorization: `Bearer ${token}` } },
+          {
+            params: { user_id: userId },
+            headers: { Authorization: `Bearer ${token}` },
+          },
         );
-        if (mounted) setScores(data);
+        if (mounted) {
+          setScores(data);
+          setIdx(data.length - 1);
+        }
       } catch (err) {
         setError(err.response?.data?.detail ?? '서버 오류');
       } finally {
@@ -48,7 +54,6 @@ const BioStatisticsPage = () => {
     return () => { mounted = false; };
   }, [userId]);
 
-  /* ─── 로딩·에러 처리 ─── */
   if (loading) return (
     <div className="d-flex justify-content-center align-items-center vh-100">
       <Spinner animation="border" />
@@ -67,44 +72,64 @@ const BioStatisticsPage = () => {
     </Container>
   );
 
-  /* ─── 시각화용 가공 ─── */
-  const latest = scores[scores.length - 1];
+  const current = scores[selectedIdx] ?? scores[scores.length - 1];
 
   const impulseLine = {
     id: 'impulse_inhibition_score',
-    data: scores.map((v, i) => ({ x: i + 1, y: v.impulse_inhibition_score })),
+    data: scores.map((v, i) => ({
+      x: i + 1,
+      y: v.impulse_inhibition_score,
+    })),
   };
   const concentrationLine = {
     id: 'concentration_score',
-    data: scores.map((v, i) => ({ x: i + 1, y: v.concentration_score })),
+    data: scores.map((v, i) => ({
+      x: i + 1,
+      y: v.concentration_score,
+    })),
   };
 
   const statusCount = scores.reduce((acc, s) => {
-    acc[s.adhd_status] = (acc[s.adhd_status] || 0) + 1; return acc;
+    acc[s.adhd_status] = (acc[s.adhd_status] || 0) + 1;
+    return acc;
   }, {});
 
-  /* ─── 렌더 ─── */
+  const handleChartClick = item => {
+    const x1 = item.data?.x ?? item.points?.[0]?.data.x;
+    if (x1) {
+      const idx = x1 - 1;
+      if (scores[idx]) setIdx(idx);
+    }
+  };
+
+  // 토글에 따라 보일 데이터만
+  const chartData = [
+    ...(showImpulse       ? [impulseLine]       : []),
+    ...(showConcentration ? [concentrationLine] : []),
+  ];
+
   return (
     <Container className="py-4">
       {/* 헤더 */}
       <Row className="mb-3">
         <Col><h2>회원 {userId} - ADHD 종합 상태</h2></Col>
         <Col className="text-end">
-          <Button variant="outline-secondary" onClick={() => navigate(-1)}>목록으로</Button>
+          <Button variant="outline-secondary" onClick={() => navigate(-1)}>
+            목록으로
+          </Button>
         </Col>
       </Row>
 
-      {/* 게이지 & 최근 판정 */}
+      {/* 게이지 · 판정 */}
       <Row xs={1} md={3} className="g-4 mb-4">
         {['impulse_inhibition_score', 'concentration_score'].map((k, idx) => (
           <Col key={k}>
             <Card className="h-100 text-center">
               <Card.Body>
                 <Card.Title>{idx ? '집중력' : '충동 억제'} 점수</Card.Title>
-
                 <div style={{ height: 140 }}>
                   <ResponsiveRadialBar
-                    data={[{ id: k, data: [{ x: '', y: latest[k] }] }]}
+                    data={[{ id: k, data: [{ x: '', y: current[k] }] }]}
                     maxValue={27}
                     startAngle={-90}
                     endAngle={90}
@@ -116,17 +141,9 @@ const BioStatisticsPage = () => {
                     enableLabels={false}
                     colors={d => getScoreColor(d.data.y)}
                     margin={{ top: 30, bottom: 10 }}
-                    radialAxisStart={{
-                      tickSize: 4,
-                      tickPadding: 2,
-                      tickRotation: 0,
-                      tickFormat: v => v,
-                      legend: '',
-                    }}
                   />
                 </div>
-
-                <h5 className="mt-2">{latest[k].toFixed(2)} / 27</h5>
+                <h5 className="mt-2">{current[k].toFixed(2)} / 27</h5>
               </Card.Body>
             </Card>
           </Col>
@@ -135,21 +152,43 @@ const BioStatisticsPage = () => {
         <Col>
           <Card
             className="h-100 text-center shadow-sm"
-            style={{ background: statusTheme[latest.adhd_status].bg }}
+            style={{ background: statusTheme[current.adhd_status].bg }}
           >
             <Card.Body className="d-flex flex-column justify-content-center align-items-center">
-              <Card.Title className="mb-3">최근 세션 판정</Card.Title>
+              <Card.Title className="mb-3">선택 세션 판정</Card.Title>
               <span
                 style={{
                   fontSize: '3rem',
                   fontWeight: 600,
-                  color: statusTheme[latest.adhd_status].fg,
+                  color: statusTheme[current.adhd_status].fg,
                 }}
               >
-                {latest.adhd_status}
+                {current.adhd_status}
               </span>
             </Card.Body>
           </Card>
+        </Col>
+      </Row>
+
+      {/* 토글 스위치 */}
+      <Row className="mb-3">
+        <Col xs="auto">
+          <Form.Check
+            type="switch"
+            id="impulse-toggle"
+            label="충동 억제"
+            checked={showImpulse}
+            onChange={() => setShowImpulse(prev => !prev)}
+          />
+        </Col>
+        <Col xs="auto">
+          <Form.Check
+            type="switch"
+            id="concentration-toggle"
+            label="집중력"
+            checked={showConcentration}
+            onChange={() => setShowConcentration(prev => !prev)}
+          />
         </Col>
       </Row>
 
@@ -160,41 +199,48 @@ const BioStatisticsPage = () => {
             <Card.Body style={{ height: 350 }}>
               <Card.Title>점수 추세</Card.Title>
               <ResponsiveLine
-                data={[impulseLine, concentrationLine]}
+                data={chartData}
                 enableSlices="x"
-                useMesh={false}
+                useMesh={true}
+                onClick={handleChartClick}
                 sliceTooltip={({ slice }) => {
-                  // 회차 인덱스(0-base) → 원본 scores에 접근
-                  const idx = slice.points[0].data.x - 1;
+                  const idx    = slice.points[0].data.x - 1;
                   const status = scores[idx]?.adhd_status ?? '';
-
                   return (
                     <div style={{
                       background: '#fff',
-                      padding: '6px 9px',
+                      padding: 10,
                       border: '1px solid #ddd',
-                      borderRadius: 4,
-                      fontSize: 12,
-                      maxWidth: 160,
+                      borderRadius: 6,
+                      fontSize: 13,
+                      minWidth: 120,
                     }}>
-                      <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                      <div style={{ fontWeight: 600, marginBottom: 6 }}>
                         {slice.points[0].data.xFormatted}회차
                       </div>
-
-                      {slice.points.map(pt => {
-                        const label = pt.serieId || (pt.serie && pt.serie.id) || pt.id.split('.')[0];
-                        return (
-                          <div key={pt.id} style={{ color: pt.serieColor }}>
-                            {label}: {pt.data.yFormatted}
-                          </div>
-                        );
-                      })}
-
-                      {/* ADHD 상태 한 줄 추가 */}
                       <div style={{
-                        marginTop: 4,
-                        color: statusTheme[status]?.fg ?? '#000',
+                        display: 'grid',
+                        gridTemplateColumns: 'auto auto',
+                        columnGap: 8,
+                        rowGap: 2,
+                        marginBottom: 6,
+                      }}>
+                        {slice.points.map(pt => {
+                          const label =
+                            pt.serieId
+                            ?? pt.serie?.id
+                            ?? (typeof pt.id === 'string' ? pt.id.split('.')[0] : '');
+                          return (
+                            <Fragment key={pt.id}>
+                              <span style={{ color: pt.serieColor }}>{label}</span>
+                              <span style={{ textAlign: 'right' }}>{pt.data.yFormatted}</span>
+                            </Fragment>
+                          );
+                        })}
+                      </div>
+                      <div style={{
                         fontWeight: 500,
+                        color: statusTheme[status]?.fg ?? '#000',
                       }}>
                         상태: {status}
                       </div>
@@ -218,14 +264,13 @@ const BioStatisticsPage = () => {
       {/* 상태 분포 뱃지 */}
       <Row className="mt-3">
         <Col>
-          {Object.entries(statusCount).map(([status, cnt]) => (
+          {Object.entries(statusCount).map(([st, cnt]) => (
             <Badge
-              key={status}
-              bg={status === '정상' ? 'success'
-                : status === '주의' ? 'warning' : 'danger'}
+              key={st}
+              bg={st === '정상' ? 'success' : st === '주의' ? 'warning' : 'danger'}
               className="me-2"
             >
-              {status}: {cnt}
+              {st}: {cnt}
             </Badge>
           ))}
         </Col>

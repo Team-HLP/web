@@ -101,7 +101,7 @@ const StatisticsPage = () => {
             data: sorted
               .filter(item => item.created_at) // null 방지
               .map(item => ({
-                x: new Date(item.created_at),
+                x: item.created_at,
                 y: item.eye_blink_count,
                 fullDate: item.created_at,
                 rawValue: item.eye_blink_count,
@@ -115,7 +115,7 @@ const StatisticsPage = () => {
             data: sorted
               .filter(item => item.created_at)
               .map(item => ({
-                x: new Date(item.created_at),
+                x: item.created_at,
                 y: item.avg_eye_pupil_size.left,
                 fullDate: item.created_at,
                 rawValue: item.avg_eye_pupil_size.left,
@@ -129,7 +129,7 @@ const StatisticsPage = () => {
             data: sorted
               .filter(item => item.created_at)
               .map(item => ({
-                x: new Date(item.created_at),
+                x: item.created_at,
                 y: item.avg_eye_pupil_size.right,
                 fullDate: item.created_at,
                 rawValue: item.avg_eye_pupil_size.right,
@@ -143,7 +143,7 @@ const StatisticsPage = () => {
             data: sorted
               .filter(item => item.created_at)
               .map(item => ({
-                x: new Date(item.created_at),
+                x: item.created_at,
                 y: item.tbrconversion_score,
                 fullDate: item.created_at,
                 rawValue: item.tbrconversion_score,
@@ -161,38 +161,59 @@ const StatisticsPage = () => {
   const common = {
     margin: { top: 40, right: 30, bottom: 70, left: 60 },
     xScale: {
-      type: 'time',
-      format: '%Y-%m-%dT%H:%M:%S',
-      precision: 'minute',
+      type: 'point',
     },
     yScale: { type: 'linear', min: 'auto', max: 'auto', stacked: false },
     pointSize: 8,
     pointBorderWidth: 2,
     useMesh: true,
     axisBottom: {
-      format: '%m-%d %H:%M',
       tickRotation: -45,
       legend: '시간',
       legendOffset: 50,
       legendPosition: 'middle',
+      format: value => {
+        const d = new Date(value);
+        return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      },
     },
   };
 
-  const Tooltip = ({ point }) => (
-    <div
-      style={{
-        background: 'white',
+  const formatDateTime = iso => {
+    const d = new Date(iso);
+    const yy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
+    return `${yy}.${mm}.${dd} ${hh}:${mi}`;
+  };
+
+  const Tooltip = ({ point }) => {
+    const when = formatDateTime(point.data.fullDate);
+    return (
+      <div style={{
+        background: '#fff',
         padding: '8px 12px',
-        border: '1px solid #ddd',
+        border: '1px solid #ccc',
         borderRadius: 4,
-      }}
-    >
-      <div><strong>{point.serieId}</strong></div>
-      <div>전체 시간: {point.data.fullDate}</div>
-      <div>날짜: {point.data.xFormatted}</div>
-      <div>값: {point.data.rawValue}</div>
-    </div>
-  );
+        fontSize: 12,
+        minWidth: 180,     
+        whiteSpace: 'nowrap',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      }}>
+        <div style={{ fontWeight: 600, marginBottom: 6 }}>
+          {point.serieId}
+        </div>
+        <div style={{ marginBottom: 4 }}>
+          <strong>날짜:</strong> {when}
+        </div>
+        <div>
+          <strong>값:</strong> {point.data.rawValue}
+        </div>
+      </div>
+    );
+  };
 
   if (loading) {
     return (
