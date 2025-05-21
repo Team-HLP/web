@@ -179,21 +179,41 @@ const StatisticsPage = () => {
     },
   };
 
-  const Tooltip = ({ point }) => (
-    <div
-      style={{
-        background: 'white',
+  const formatDateTime = iso => {
+    const d = new Date(iso);
+    const yy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
+    return `${yy}.${mm}.${dd} ${hh}:${mi}`;
+  };
+
+  const Tooltip = ({ point }) => {
+    const when = formatDateTime(point.data.fullDate);
+    return (
+      <div style={{
+        background: '#fff',
         padding: '8px 12px',
-        border: '1px solid #ddd',
+        border: '1px solid #ccc',
         borderRadius: 4,
-      }}
-    >
-      <div><strong>{point.serieId}</strong></div>
-      <div>전체 시간: {point.data.fullDate}</div>
-      <div>날짜: {point.data.xFormatted}</div>
-      <div>값: {point.data.rawValue}</div>
-    </div>
-  );
+        fontSize: 12,
+        minWidth: 180,     
+        whiteSpace: 'nowrap',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      }}>
+        <div style={{ fontWeight: 600, marginBottom: 6 }}>
+          {point.serieId}
+        </div>
+        <div style={{ marginBottom: 4 }}>
+          <strong>날짜:</strong> {when}
+        </div>
+        <div>
+          <strong>값:</strong> {point.data.rawValue}
+        </div>
+      </div>
+    );
+  };
 
   if (loading) {
     return (
