@@ -1,8 +1,9 @@
-// App.js
+// src/App.js
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import './App.css';
+import Header from './components/Header';
 
 // 페이지 컴포넌트 import
 import LoginPage from './pages/LoginPage';
@@ -18,9 +19,19 @@ const RequireAuth = ({ children }) => {
   return token ? children : <Navigate to="/" replace />;
 };
 
-const App = () => {
+// 전체 앱 레이아웃: 로그인 페이지에는 헤더를 숨기고,
+// 그 외에는 항상 Header를 보여줌
+function AppLayout() {
+  const location = useLocation();
+
+  // 로그인 페이지 경로
+  const isLoginPage = location.pathname === '/';
+
   return (
-    <Router>
+    <>
+      {/* 로그인 경로가 아닐 때만 Header 보여주기 */}
+      {!isLoginPage && <Header />}
+
       <Routes>
         {/* 로그인 페이지 (기본 경로) */}
         <Route path="/" element={<LoginPage />} />
@@ -65,13 +76,24 @@ const App = () => {
           }
         />
 
+        {/* Bio 통계 페이지 */}
         <Route
           path="/admin/user/:userId/bio"
-          element={<BioStatisticsPage />}
+          element={
+            <RequireAuth>
+              <BioStatisticsPage />
+            </RequireAuth>
+          }
         />
       </Routes>
-    </Router>
+    </>
   );
-};
+}
+
+const App = () => (
+  <Router>
+    <AppLayout />
+  </Router>
+);
 
 export default App;

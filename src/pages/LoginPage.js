@@ -1,11 +1,11 @@
-// LoginPage.js
+// src/pages/LoginPage.js
 
-// 로그인 페이지 컴포넌트
-import { useEffect, useState } from 'react';
-import axios from '../api/axios'; // 커스텀 axios 인스턴스 import
+import React, { useEffect, useState } from 'react';
+import axios from '../api/axios';               // 커스텀 axios 인스턴스
 import { useNavigate } from 'react-router-dom'; // 페이지 이동용
-import '../styles/login.css'; // 로그인 전용 스타일
-import 'bootstrap/dist/css/bootstrap.min.css'; // 부트스트랩 스타일
+import { Carousel } from 'react-bootstrap';     // Carousel 추가
+import '../styles/login.css';                   // 기존 스타일
+import 'bootstrap/dist/css/bootstrap.min.css';  // 부트스트랩
 
 // SHA-256 해시 함수 (비밀번호 암호화용)
 async function hashPassword(password) {
@@ -13,32 +13,23 @@ async function hashPassword(password) {
   const data = encoder.encode(password);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-// 로그인 컴포넌트
 function LoginPage() {
-  // 상태 변수
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
-  const navigate = useNavigate(); // 페이지 이동용 훅
+  const navigate = useNavigate();
 
   // 로그인 요청 처리
   const handleLogin = async () => {
     try {
-      // 비밀번호 해싱
       const hashedPassword = await hashPassword(password);
-
-      // 로그인 API 요청
       const response = await axios.post('/admin/login', {
         login_id: loginId,
         password: hashedPassword,
       });
-
-      // 토큰 저장 및 페이지 이동
-      const access_token = response.data.access_token;
-      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('access_token', response.data.access_token);
       navigate('/admin/member-list');
     } catch (error) {
       console.error('로그인 실패:', error);
@@ -46,7 +37,7 @@ function LoginPage() {
     }
   };
 
-  // 로그인 페이지 진입 시 배경 설정
+  // 진입 시 배경 클래스 토글
   useEffect(() => {
     document.body.classList.add('login-background');
     return () => {
@@ -54,23 +45,68 @@ function LoginPage() {
     };
   }, []);
 
-  // 렌더링
   return (
     <div id="container" className="text-center">
-      {/* 제목 */}
-      <h1 id="pageTitle">ADHD-VR REPORT</h1>
 
-      {/* 로그인 박스 */}
+
+      {/* 1. 큰 로고 */}
+      <img
+        src={`${process.env.PUBLIC_URL}/images/logo.png`}
+        alt="EyeWaveVR Logo"
+        style={{
+          width: '250px',
+          maxWidth: '80%',
+          margin: '40px auto 10px',
+          display: 'block',
+        }}
+      />
+      {/* 3. 메인 이미지 슬라이더 */}
+      <Carousel
+        variant="dark"
+        interval={4000}
+        controls
+        indicators
+        className="login-carousel mb-4"
+        style={{ maxWidth: '500px', margin: '0 auto' }}
+      >
+        <Carousel.Item>
+          <img
+            src={`${process.env.PUBLIC_URL}/images/main1.png`}
+            alt="Slide 1"
+            className="d-block w-100"
+          />
+        </Carousel.Item>
+        <Carousel.Item>
+          <img
+            src={`${process.env.PUBLIC_URL}/images/main2.png`}
+            alt="Slide 2"
+            className="d-block w-100"
+          />
+        </Carousel.Item>
+        <Carousel.Item>
+          <img
+            src={`${process.env.PUBLIC_URL}/images/main3.png`}
+            alt="Slide 3"
+            className="d-block w-100"
+          />
+        </Carousel.Item>
+      </Carousel>
+
+
+      {/* 2. 프로젝트 슬로건 */}
+      <p className="lead mb-4">
+        VR로 ADHD 집중 훈련을 경험하세요
+      </p>
+
+      {/* 4. 로그인 박스 */}
       <div id="loginBox">
-        {/* 폼 태그 추가 */}
         <form
-          onSubmit={(e) => {
-            e.preventDefault(); // 새로고침 방지
-            handleLogin();      // 로그인 호출
-          }}
           id="inputBox"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleLogin();
+          }}
         >
-          {/* 아이디 입력 */}
           <div className="input-form-box">
             <span>아이디</span>
             <input
@@ -81,7 +117,6 @@ function LoginPage() {
             />
           </div>
 
-          {/* 비밀번호 입력 */}
           <div className="input-form-box">
             <span>비밀번호</span>
             <input
@@ -92,10 +127,9 @@ function LoginPage() {
             />
           </div>
 
-          {/* 로그인 버튼 */}
           <div className="button-login-box">
             <button
-              type="submit"  // type을 submit으로 변경
+              type="submit"
               className="btn btn-primary btn-xs w-100"
             >
               로그인
