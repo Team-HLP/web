@@ -90,6 +90,13 @@ function LoginPage() {
             className="d-block w-100"
           />
         </Carousel.Item>
+                <Carousel.Item>
+          <img
+            src={`${process.env.PUBLIC_URL}/images/main4.png`}
+            alt="Slide 4"
+            className="d-block w-100"
+          />
+        </Carousel.Item>
       </Carousel>
 
 
