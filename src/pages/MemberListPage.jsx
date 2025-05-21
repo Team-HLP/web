@@ -1,114 +1,109 @@
-// MemberListPage.jsx
-
+// src/pages/MemberListPage.jsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import BootstrapTable from 'react-bootstrap-table-next';
 import paginationFactory from 'react-bootstrap-table2-paginator';
 import { Modal, Button, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-bootstrap-table-next/dist/react-bootstrap-table2.min.css';
 
+const API_BASE = 'https://api-hlp.o-r.kr';
+
 const MemberListPage = () => {
-  // 상태변수 선언
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // 회원 & 필터링 상태
   const [members, setMembers] = useState([]);
+  const [filteredMembers, setFilteredMembers] = useState([]);
+
+  // 모달 상태
   const [showRegisterModal, setShowRegisterModal] = useState(false);
-  const [newUser, setNewUser] = useState({
-    login_id: '',
-    name: '',
-    age: '',
-    sex: '',
-    password: ''
-  });
+  const [showAdminModal, setShowAdminModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  const [showAdminModal, setShowAdminModal] = useState(false);
+  // 입력 상태
+  const [newUser, setNewUser] = useState({ login_id: '', name: '', age: '', sex: '' });
+  const [selectedUser, setSelectedUser] = useState(null);
   const [oldPwd, setOldPwd] = useState('');
   const [newPwd, setNewPwd] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false); // 중복 등록 방지
-  const [searchKeyword, setSearchKeyword] = useState(''); // 검색어 상태
-  const [filteredMembers, setFilteredMembers] = useState([]);
+  const [isRegistering, setIsRegistering] = useState(false);
+
+  // 검색어 / 필터링 상태
+  const [searchKeyword, setSearchKeyword] = useState('');
   const [filterSex, setFilterSex] = useState('');
   const [filterAgeMin, setFilterAgeMin] = useState('');
   const [filterAgeMax, setFilterAgeMax] = useState('');
 
-  const navigate = useNavigate();
+  // SHA-256 해시 함수 (비밀번호 암호화용)
+  async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
 
-  // 테이블 행 클릭 시 상세 페이지 이동
-  const rowEvents = {
-    onClick: (e, row) => {
-      navigate(`/admin/member/${row.id}`);
-    },
+  // 관리자 비밀번호 변경 요청
+  const handleChangePassword = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const hashedOld = await hashPassword(oldPwd);
+      const hashedNew = await hashPassword(newPwd);
+      await axios.patch(
+        `${API_BASE}/admin/password`,
+        { cur_password: hashedOld, new_password: hashedNew },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert('비밀번호가 성공적으로 변경되었습니다.');
+      setShowAdminModal(false);
+      setOldPwd('');
+      setNewPwd('');
+    } catch (err) {
+      console.error('비밀번호 변경 실패:', err);
+      alert('비밀번호 변경에 실패했습니다.');
+    }
   };
-  // 컴포넌트 마운트 시 회원 목록 불러오기
+
+  // 회원 목록 API 호출
+  const fetchMembers = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await axios.get(`${API_BASE}/admin/users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setMembers(res.data);
+      setFilteredMembers(res.data);
+    } catch (err) {
+      console.error('회원 목록 불러오기 실패:', err);
+    }
+  };
+
   useEffect(() => {
     fetchMembers();
   }, []);
 
-
-  // API로 회원 목록 가져오기
-  const fetchMembers = async () => {
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await axios.get('https://api-hlp.o-r.kr/admin/users', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setMembers(response.data);
-      setFilteredMembers(response.data); // 최초엔 전체 목록으로
-    } catch (error) {
-      console.error('회원 목록 불러오기 실패:', error);
+  // URL 쿼리로 모달 자동 오픈 (register/settings)
+  useEffect(() => {
+    if (searchParams.get('register') === 'true') {
+      setShowRegisterModal(true);
+      searchParams.delete('register');
+      setSearchParams(searchParams, { replace: true });
     }
-  };
-
-  // 로그아웃 핸들러
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    navigate('/');
-  };
-
-  // 등록 모달 열기/닫기
-  const handleShowRegisterModal = () => setShowRegisterModal(true);
-  const handleCloseRegisterModal = () => {
-    setShowRegisterModal(false);
-    setNewUser({ login_id: '', name: '', age: '', sex: '', password: '' });
-  };
-
-  // 등록 폼 값 변경 핸들러
-  const handleChangeNewUser = (e) => {
-    const { name, value } = e.target;
-
-    // 전화번호 하이픈 자동 삽입 (login_id만)
-    if (name === 'login_id') {
-      // 숫자만 추출
-      const numbers = value.replace(/\D/g, '');
-
-      let formatted = numbers;
-      if (numbers.length < 4) {
-        formatted = numbers;
-      } else if (numbers.length < 7) {
-        formatted = `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
-      } else if (numbers.length <= 11) {
-        formatted = `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
-      }
-
-      setNewUser((prev) => ({ ...prev, [name]: formatted }));
-    } else {
-      setNewUser((prev) => ({ ...prev, [name]: value }));
+    if (searchParams.get('settings') === 'true') {
+      setShowAdminModal(true);
+      searchParams.delete('settings');
+      setSearchParams(searchParams, { replace: true });
     }
-  };
+  }, [searchParams, setSearchParams]);
 
   // 회원 등록 요청
   const handleRegisterUser = async () => {
     if (isRegistering) return;
     setIsRegistering(true);
-
     const plainPhone = newUser.login_id.replace(/-/g, '');
-
-    // 클라이언트 측 유효성 검사
     if (!/^\d{10,11}$/.test(plainPhone)) {
       alert('전화번호는 10~11자리 숫자여야 합니다.');
       setIsRegistering(false);
@@ -119,7 +114,7 @@ const MemberListPage = () => {
       setIsRegistering(false);
       return;
     }
-    if (!newUser.age || isNaN(newUser.age) || Number(newUser.age) <= 0) {
+    if (!newUser.age || Number(newUser.age) <= 0) {
       alert('올바른 나이를 입력해주세요.');
       setIsRegistering(false);
       return;
@@ -129,250 +124,186 @@ const MemberListPage = () => {
       setIsRegistering(false);
       return;
     }
-
-    // 중복 전화번호 확인
-    const isDuplicate = members.some(
-      (user) => user.phone_number === plainPhone
-    );
-    if (isDuplicate) {
+    const dup = members.some(u => u.phone_number === plainPhone);
+    if (dup) {
       alert('이미 등록된 전화번호입니다.');
       setIsRegistering(false);
       return;
     }
-
-    const token = localStorage.getItem('access_token');
-    const gender = newUser.sex === '남자' ? 'MAN' : 'WOMAN';
-    const payload = {
-      name: newUser.name,
-      phone_number: plainPhone,
-      age: Number(newUser.age),
-      sex: gender,
-    };
-
     try {
-      await axios.post('https://api-hlp.o-r.kr/admin/user/register', payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const token = localStorage.getItem('access_token');
+      const payload = {
+        name: newUser.name,
+        phone_number: plainPhone,
+        age: Number(newUser.age),
+        sex: newUser.sex === '남자' ? 'MAN' : 'WOMAN',
+      };
+      await axios.post(`${API_BASE}/admin/user/register`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-
       alert('회원 등록 성공!');
-      handleCloseRegisterModal();
+      setShowConfirmModal(false);
+      setShowRegisterModal(false);
+      setNewUser({ login_id: '', name: '', age: '', sex: '' });
       await fetchMembers();
-    } catch (error) {
-      console.error('회원 등록 실패:', error);
-      alert('회원 등록 실패');
+    } catch (err) {
+      console.error('회원 등록 실패:', err);
+      alert('회원 등록에 실패했습니다.');
     } finally {
       setIsRegistering(false);
     }
   };
 
-  // 회원 삭제 요청
-  const handleDeleteClick = (user) => {
+  // 로그아웃
+  // eslint-disable-next-line no-unused-vars
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    navigate('/');
+  };
+
+  // 모달 토글
+  // eslint-disable-next-line no-unused-vars
+  const handleShowRegisterModal = () => setShowRegisterModal(true);
+  const handleCloseRegisterModal = () => {
+    setShowRegisterModal(false);
+    setNewUser({ login_id: '', name: '', age: '', sex: '' });
+  };
+  const handleCloseAdminModal = () => setShowAdminModal(false);
+
+  // 회원 삭제
+  const handleDeleteClick = user => {
     setSelectedUser(user);
     setShowDeleteModal(true);
   };
-
+  const handleCloseDeleteModal = () => setShowDeleteModal(false);
   const handleConfirmDelete = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      await axios.delete(`https://api-hlp.o-r.kr/admin/user/withdraw`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        params: {
-          userId: selectedUser.id
-        }
+      await axios.delete(`${API_BASE}/admin/user/withdraw`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { userId: selectedUser.id }
       });
       alert('회원이 삭제되었습니다.');
       setShowDeleteModal(false);
       fetchMembers();
-    } catch (error) {
-      console.error('회원 삭제 실패:', error);
+    } catch (err) {
+      console.error('회원 삭제 실패:', err);
       alert('회원 삭제에 실패했습니다.');
     }
   };
 
-  // 회원 리스트 테이블 컬럼 정의
-  const columns = [
-    {
-      dataField: 'login_id',       // 사용자 로그인 ID (전화번호 기반)
-      text: 'ID',                  // 테이블 헤더에 표시될 이름
-      sort: true                   // 정렬 가능
-    },
-    {
-      dataField: 'name',           // 사용자 이름
-      text: '이름',
-      sort: true
-    },
-    {
-      dataField: 'age',            // 사용자 나이
-      text: '나이',
-      formatter: (value) => `${value}세`,  // "25세" 형태로 출력
-      sort: true
-    },
-    {
-      dataField: 'sex',            // 사용자 성별
-      text: '성별',
-      sort: true,
-    },
-    {
-      dataField: 'created_at',     // 가입일 (서버에서 제공하는 타임스탬프)
-      text: '가입일',
-      sort: true
-    },
-    {
-      dataField: 'actions',
-      text: '',
-      formatter: (cell, row) => (
-        <div className="d-flex justify-content-end gap-2">
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation(); // 상세 페이지 이동 방지
-              handleDeleteClick(row);
-            }}
-          >
-            삭제
-          </Button>
-        </div>
-      ),
-      headerStyle: { width: '180px' },
-      align: 'center',
-    },
-  ];
-
-  // SHA-256 해시 함수 (비밀번호 변경에 사용)
-  async function hashPassword(password) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  // 관리자 비밀번호 변경 요청
-  const handleChangePassword = async () => {
-    try {
-      const token = localStorage.getItem('access_token');
-      const hashedOld = await hashPassword(oldPwd);
-      const hashedNew = await hashPassword(newPwd);
-
-      await axios.patch('https://api-hlp.o-r.kr/admin/password', {
-        cur_password: hashedOld,
-        new_password: hashedNew,
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      alert('비밀번호가 성공적으로 변경되었습니다.');
-      setShowAdminModal(false);
-      setOldPwd('');
-      setNewPwd('');
-    } catch (error) {
-      console.error('비밀번호 변경 실패:', error);
-      alert('비밀번호 변경에 실패했습니다.');
-    }
-  };
-
-  // 필터 버튼 눌렀을 때만 필터링된 리스트 세팅
+  // 검색 & 필터링
   const handleSearch = () => {
-    const keyword = searchKeyword.trim();               // 공백 제거
-    const minAge = filterAgeMin === '' ? 0 : Math.max(0, parseInt(filterAgeMin, 10));
-    const maxAge = filterAgeMax === '' ? Infinity : Math.max(minAge, parseInt(filterAgeMax, 10));
-
-    const result = members.filter((user) => {
-      const matchesKeyword =
-        keyword === '' ||
-        user.name.includes(keyword) ||
-        user.login_id.includes(keyword);
-
-      const matchesSex = filterSex === '' || user.sex === filterSex;
-      const matchesAge = user.age >= minAge && user.age <= maxAge;
-
-      return matchesKeyword && matchesSex && matchesAge;
+    const keyword = searchKeyword.trim().toLowerCase();
+    const minAge = filterAgeMin ? parseInt(filterAgeMin, 10) : 0;
+    const maxAge = filterAgeMax ? parseInt(filterAgeMax, 10) : Infinity;
+    const result = members.filter(u => {
+      const matchKey = !keyword || u.name.toLowerCase().includes(keyword) || u.login_id.includes(keyword);
+      const matchSex = !filterSex || u.sex === filterSex;
+      const matchAge = u.age >= minAge && u.age <= maxAge;
+      return matchKey && matchSex && matchAge;
     });
-
     setFilteredMembers(result);
   };
-
-  // 필터 초기화 함수
   const handleResetFilter = () => {
     setSearchKeyword('');
     setFilterSex('');
     setFilterAgeMin('');
     setFilterAgeMax('');
-    setFilteredMembers(members); // 전체 목록 다시 보여줌
+    setFilteredMembers(members);
   };
 
-  // 엔터키로 검색함수 호출
-  const handleKeyDown = (e) => {
+  // Enter 키로 검색 실행
+  const handleKeyDown = e => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleSearch(); 
+      handleSearch();
     }
   };
 
-  // 렌더링
+  // 테이블 컬럼 정의
+  const columns = [
+    { dataField: 'login_id', text: 'ID', sort: true },
+    { dataField: 'name', text: '이름', sort: true },
+    { dataField: 'age', text: '나이', formatter: v => `${v}세`, sort: true },
+    { dataField: 'sex', text: '성별', sort: true },
+    { dataField: 'created_at', text: '가입일', sort: true },
+    {
+      dataField: 'actions', text: '',
+      formatter: (_cell, row) => (
+        <Button variant="outline-danger" className="border-0"
+          size="sm" onClick={e => { e.stopPropagation(); handleDeleteClick(row); }}>
+          삭제
+        </Button>
+      ),
+      align: 'center', headerStyle: { width: '100px' }
+    }
+  ];
+
+  // ★ rowEvents 정의는 columns 정의 아래, return 바로 위에 두세요
+  const rowEvents = {
+    onClick: (e, row) => navigate(`/admin/member/${row.id}`)
+  };
+
   return (
     <div className="container mt-5">
-      {/* 상단 타이틀 및 버튼 */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="mb-0">회원 리스트</h2>
-        <div>
-          <Button variant="outline-secondary" className="me-2" onClick={() => setShowAdminModal(true)}>
-            관리자 설정
-          </Button>
-          <Button variant="outline-primary" className="me-2" onClick={handleShowRegisterModal}>
-            회원 아이디 발급
-          </Button>
-          <Button variant="outline-danger" onClick={handleLogout}>
-            로그아웃
-          </Button>
-        </div>
-      </div>
 
       {/* 필터 영역 */}
-      <div className="mb-4">
-        <Form
-          className="d-flex flex-wrap gap-2 align-items-center"
-          onKeyDown={handleKeyDown}
+      <Form className="d-flex flex-wrap gap-2 mb-4" onKeyDown={handleKeyDown}>
+        <Form.Control
+          type="text"
+          style={{ width: 180 }}
+          placeholder="이름 또는 ID"
+          value={searchKeyword}
+          onChange={e => setSearchKeyword(e.target.value)}
+        />
+        <Form.Select
+          style={{ width: 120 }}
+          value={filterSex}
+          onChange={e => setFilterSex(e.target.value)}
         >
-          <Form.Control type="text" placeholder="이름 또는 ID" value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} style={{ width: '180px' }} />
-          <Form.Select value={filterSex} onChange={(e) => setFilterSex(e.target.value)} style={{ width: '120px' }}>
-            <option value="">성별</option>
-            <option value="남">남자</option>
-            <option value="여">여자</option>
-          </Form.Select>
-          <Form.Control type="number" placeholder="최소 나이" min="0" value={filterAgeMin} onChange={(e) => {
+          <option value="">성별</option>
+          <option value="남자">남자</option>
+          <option value="여자">여자</option>
+        </Form.Select>
+        <Form.Control
+          type="number"
+          style={{ width: 100 }}
+          placeholder="최소 나이"
+          min="0"
+          value={filterAgeMin}
+          onChange={e => {
             const v = e.target.value;
-            if (v === '' || Number(v) >= 0) setFilterAgeMin(v);   // 음수 차단
-          }} style={{ width: '100px' }} />
-          <span>~</span>
-          <Form.Control type="number" placeholder="최대 나이" min="0" value={filterAgeMax} onChange={(e) => {
+            if (v === '' || Number(v) >= 0) setFilterAgeMin(v);
+          }}
+        />
+        <span className="align-self-center">~</span>
+        <Form.Control
+          type="number"
+          style={{ width: 100 }}
+          placeholder="최대 나이"
+          min="0"
+          value={filterAgeMax}
+          onChange={e => {
             const v = e.target.value;
-            if (v === '' || Number(v) >= 0) setFilterAgeMax(v);   // 음수 차단
-          }} style={{ width: '100px' }} />
-          <Button variant="primary" onClick={handleSearch}>검색</Button>
-          <Button variant="outline-secondary" onClick={handleResetFilter}>
-            초기화
-          </Button>
-        </Form>
-      </div>
+            if (v === '' || Number(v) >= 0) setFilterAgeMax(v);
+          }}
+        />
+        <Button variant="primary" onClick={handleSearch}>검색</Button>
+        <Button variant="outline-secondary" onClick={handleResetFilter}>초기화</Button>
+      </Form>
 
-      {/* 회원 목록 테이블 */}
+      {/* 회원 테이블 (외곽선 없음) */}
       <BootstrapTable
         keyField="id"
         data={filteredMembers}
         columns={columns}
         rowEvents={rowEvents}
-        bordered={false}
+        bootstrap4
         striped
         hover
         condensed
+        bordered={false}
         pagination={paginationFactory({ sizePerPage: 10 })}
         noDataIndication="회원 정보가 없습니다."
       />
@@ -383,44 +314,22 @@ const MemberListPage = () => {
           <Modal.Title>회원 아이디 발급</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {/* 등록 입력 폼 */}
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>전화번호 (하이픈 없이 입력)</Form.Label>
-              <Form.Control
-                type="text"
-                name="login_id"
-                value={newUser.login_id}
-                onChange={handleChangeNewUser}
-                placeholder="010-1234-5678"
-              />
+              <Form.Label>전화번호 (하이픈 없이)</Form.Label>
+              <Form.Control name="login_id" value={newUser.login_id} onChange={e => setNewUser(prev => ({ ...prev, login_id: e.target.value }))} />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>이름</Form.Label>
-              <Form.Control
-                type="text"
-                name="name"
-                value={newUser.name}
-                onChange={handleChangeNewUser}
-              />
+              <Form.Control name="name" value={newUser.name} onChange={e => setNewUser(prev => ({ ...prev, name: e.target.value }))} />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>나이</Form.Label>
-              <Form.Control
-                type="number"
-                name="age"
-                min="0"
-                value={newUser.age}
-                onChange={handleChangeNewUser}
-              />
+              <Form.Control type="number" name="age" value={newUser.age} onChange={e => setNewUser(prev => ({ ...prev, age: e.target.value }))} />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>성별</Form.Label>
-              <Form.Select
-                name="sex"
-                value={newUser.sex}
-                onChange={handleChangeNewUser}
-              >
+              <Form.Select name="sex" value={newUser.sex} onChange={e => setNewUser(prev => ({ ...prev, sex: e.target.value }))}>
                 <option value="">선택</option>
                 <option value="남자">남자</option>
                 <option value="여자">여자</option>
@@ -429,17 +338,12 @@ const MemberListPage = () => {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseRegisterModal}>
-            취소
-          </Button>
-          {/* 입력 정보 확인 모달로 전환 */}
-          <Button variant="primary" onClick={() => setShowConfirmModal(true)}>
-            확인
-          </Button>
+          <Button variant="secondary" onClick={handleCloseRegisterModal}>취소</Button>
+          <Button variant="primary" onClick={() => setShowConfirmModal(true)}>확인</Button>
         </Modal.Footer>
       </Modal>
 
-      {/* 입력 정보 확인 모달 */}
+      {/* 입력 확인 모달 */}
       <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>입력 정보 확인</Modal.Title>
@@ -451,12 +355,12 @@ const MemberListPage = () => {
           <p><strong>성별:</strong> {newUser.sex}</p>
         </Modal.Body>
         <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>취소</Button>
           <Button
             variant="primary"
             onClick={async () => {
               if (!isRegistering) {
                 await handleRegisterUser();
-                setShowConfirmModal(false);
               }
             }}
             disabled={isRegistering}
@@ -467,25 +371,19 @@ const MemberListPage = () => {
       </Modal>
 
       {/* 회원 삭제 확인 모달 */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+      <Modal show={showDeleteModal} onHide={handleCloseDeleteModal}>
         <Modal.Header closeButton>
           <Modal.Title>회원 삭제 확인</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          정말로 회원을 삭제하시겠습니까?
-        </Modal.Body>
+        <Modal.Body>정말로 회원을 삭제하시겠습니까?</Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            취소
-          </Button>
-          <Button variant="danger" onClick={handleConfirmDelete}>
-            삭제
-          </Button>
+          <Button variant="secondary" onClick={handleCloseDeleteModal}>취소</Button>
+          <Button variant="danger" onClick={handleConfirmDelete}>삭제</Button>
         </Modal.Footer>
       </Modal>
 
-      {/* 관리자 비밀번호 변경 모달 */}
-      <Modal show={showAdminModal} onHide={() => setShowAdminModal(false)}>
+      {/* 관리자 설정 모달 */}
+      <Modal show={showAdminModal} onHide={handleCloseAdminModal}>
         <Modal.Header closeButton>
           <Modal.Title>관리자 비밀번호 변경</Modal.Title>
         </Modal.Header>
@@ -493,29 +391,17 @@ const MemberListPage = () => {
           <Form>
             <Form.Group className="mb-3">
               <Form.Label>기존 비밀번호</Form.Label>
-              <Form.Control
-                type="password"
-                value={oldPwd}
-                onChange={(e) => setOldPwd(e.target.value)}
-              />
+              <Form.Control type="password" value={oldPwd} onChange={e => setOldPwd(e.target.value)} />
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>새 비밀번호</Form.Label>
-              <Form.Control
-                type="password"
-                value={newPwd}
-                onChange={(e) => setNewPwd(e.target.value)}
-              />
+              <Form.Control type="password" value={newPwd} onChange={e => setNewPwd(e.target.value)} />
             </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowAdminModal(false)}>
-            닫기
-          </Button>
-          <Button variant="primary" onClick={handleChangePassword}>
-            변경
-          </Button>
+          <Button variant="secondary" onClick={handleCloseAdminModal}>취소</Button>
+          <Button variant="primary" onClick={handleChangePassword}>변경</Button>
         </Modal.Footer>
       </Modal>
     </div>
