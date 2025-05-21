@@ -38,6 +38,7 @@ export default function Header() {
           <Button
             variant="outline-secondary"
             size="sm"
+            className="border-0"
             onClick={() => goMemberList('settings')}
           >
             관리자 설정
@@ -45,6 +46,7 @@ export default function Header() {
           <Button
             variant="outline-primary"
             size="sm"
+            className="border-0"
             onClick={() => goMemberList('register')}
           >
             회원 아이디 발급
@@ -52,6 +54,7 @@ export default function Header() {
           <Button
             variant="outline-danger"
             size="sm"
+            className="border-0"
             onClick={handleLogout}
           >
             로그아웃
