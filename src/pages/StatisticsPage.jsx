@@ -101,7 +101,7 @@ const StatisticsPage = () => {
             data: sorted
               .filter(item => item.created_at) // null 방지
               .map(item => ({
-                x: new Date(item.created_at),
+                x: item.created_at,
                 y: item.eye_blink_count,
                 fullDate: item.created_at,
                 rawValue: item.eye_blink_count,
@@ -115,7 +115,7 @@ const StatisticsPage = () => {
             data: sorted
               .filter(item => item.created_at)
               .map(item => ({
-                x: new Date(item.created_at),
+                x: item.created_at,
                 y: item.avg_eye_pupil_size.left,
                 fullDate: item.created_at,
                 rawValue: item.avg_eye_pupil_size.left,
@@ -129,7 +129,7 @@ const StatisticsPage = () => {
             data: sorted
               .filter(item => item.created_at)
               .map(item => ({
-                x: new Date(item.created_at),
+                x: item.created_at,
                 y: item.avg_eye_pupil_size.right,
                 fullDate: item.created_at,
                 rawValue: item.avg_eye_pupil_size.right,
@@ -143,7 +143,7 @@ const StatisticsPage = () => {
             data: sorted
               .filter(item => item.created_at)
               .map(item => ({
-                x: new Date(item.created_at),
+                x: item.created_at,
                 y: item.tbrconversion_score,
                 fullDate: item.created_at,
                 rawValue: item.tbrconversion_score,
@@ -161,20 +161,21 @@ const StatisticsPage = () => {
   const common = {
     margin: { top: 40, right: 30, bottom: 70, left: 60 },
     xScale: {
-      type: 'time',
-      format: '%Y-%m-%dT%H:%M:%S',
-      precision: 'minute',
+      type: 'point',
     },
     yScale: { type: 'linear', min: 'auto', max: 'auto', stacked: false },
     pointSize: 8,
     pointBorderWidth: 2,
     useMesh: true,
     axisBottom: {
-      format: '%m-%d %H:%M',
       tickRotation: -45,
       legend: '시간',
       legendOffset: 50,
       legendPosition: 'middle',
+      format: value => {
+        const d = new Date(value);
+        return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      },
     },
   };
 
