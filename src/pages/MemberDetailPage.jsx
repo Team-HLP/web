@@ -9,7 +9,6 @@ import {
   Container,
   Row,
   Col,
-  Form,
 } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -72,10 +71,10 @@ const MemberDetailPage = () => {
   return (
     <Container className="mt-5">
       {/* 상단 헤더 */}
-      <Row className="mb-4 align-items-center">
+      <Row className="mb-4 align-items-center justify-content-between">
         <Col><h2>회원 상세 정보</h2></Col>
         <Col xs="auto">
-          <Button variant="light" onClick={() => navigate(-1)}>
+          <Button variant="outline-secondary" onClick={() => navigate(-1)}>
             뒤로 가기
           </Button>
         </Col>
