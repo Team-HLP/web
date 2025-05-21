@@ -115,7 +115,7 @@ const BioStatisticsPage = () => {
         <Col><h2>회원 {userId} - ADHD 종합 상태</h2></Col>
         <Col className="text-end">
           <Button variant="outline-secondary" onClick={() => navigate(-1)}>
-            목록으로
+            회원 상세 정보로
           </Button>
         </Col>
       </Row>

@@ -88,7 +88,7 @@ const MemberDetailPage = () => {
         <Col><h2>회원 상세 정보</h2></Col>
         <Col xs="auto">
           <Button variant="outline-secondary" onClick={() => navigate(-1)}>
-            뒤로 가기
+            회원 리스트로
           </Button>
         </Col>
       </Row>

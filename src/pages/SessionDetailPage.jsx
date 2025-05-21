@@ -273,8 +273,8 @@ export default function SessionDetailPage() {
               EEG CSV
             </Button>
           </ButtonGroup>
-          <Button variant="secondary" onClick={() => navigate(-1)}>
-            뒤로 가기
+          <Button variant="outline-secondary" onClick={() => navigate(-1)}>
+            회원 상세 정보로
           </Button>
         </Col>
       </Row>
