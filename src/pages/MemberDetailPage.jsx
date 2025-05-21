@@ -87,7 +87,7 @@ const MemberDetailPage = () => {
       <Row className="mb-4 align-items-center justify-content-between">
         <Col><h4>회원 상세 정보</h4></Col>
         <Col xs="auto">
-          <Button variant="outline-secondary" onClick={() => navigate(-1)}>
+          <Button variant="outline-secondary" className="border-0" onClick={() => navigate(-1)}>
             회원 리스트로
           </Button>
         </Col>

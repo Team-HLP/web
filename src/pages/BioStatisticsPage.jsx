@@ -114,7 +114,7 @@ const BioStatisticsPage = () => {
       <Row className="mb-3">
         <Col><h4>회원 {userId} - ADHD 종합 상태</h4></Col>
         <Col className="text-end">
-          <Button variant="outline-secondary" onClick={() => navigate(-1)}>
+          <Button variant="outline-secondary" className="border-0" onClick={() => navigate(-1)}>
             회원 상세 정보로
           </Button>
         </Col>

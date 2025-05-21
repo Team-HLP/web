@@ -239,7 +239,7 @@ const StatisticsPage = () => {
               TBR CSV
             </Button>
           </ButtonGroup>
-          <Button variant="outline-secondary" onClick={() => navigate(-1)}>
+          <Button variant="outline-secondary" className="border-0" onClick={() => navigate(-1)}>
             회원 상세 정보로
           </Button>
         </Col>
