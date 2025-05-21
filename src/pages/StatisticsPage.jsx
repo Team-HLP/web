@@ -226,7 +226,7 @@ const StatisticsPage = () => {
   return (
     <Container className="mt-5 pb-5">
       <Row className="mb-4 align-items-center justify-content-between">
-        <Col><h2>회원 {userId} – 전체 통계</h2></Col>
+        <Col><h4>회원 {userId} – 전체 통계</h4></Col>
         <Col xs="auto">
           <ButtonGroup className="me-2">
             <Button size="sm" variant="outline-success" onClick={downloadBlinkCSV}>

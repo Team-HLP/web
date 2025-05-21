@@ -85,7 +85,7 @@ const MemberDetailPage = () => {
     <Container className="mt-5">
       {/* 상단 헤더 */}
       <Row className="mb-4 align-items-center justify-content-between">
-        <Col><h2>회원 상세 정보</h2></Col>
+        <Col><h4>회원 상세 정보</h4></Col>
         <Col xs="auto">
           <Button variant="outline-secondary" onClick={() => navigate(-1)}>
             회원 리스트로

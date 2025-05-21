@@ -258,7 +258,7 @@ export default function SessionDetailPage() {
       {/* 헤더 */}
       <Row className="mb-4 align-items-center justify-content-between">
         <Col>
-          <h2>훈련 세션 조회</h2>
+          <h4>훈련 세션 조회</h4>
         </Col>
         <Col xs="auto">
           <ButtonGroup className="me-2">
