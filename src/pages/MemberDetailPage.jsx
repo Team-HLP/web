@@ -9,6 +9,7 @@ import {
   Container,
   Row,
   Col,
+  ToggleButton,
 } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -18,8 +19,9 @@ const MemberDetailPage = () => {
   const { userId } = useParams();
   const navigate  = useNavigate();
 
-  const [user,  setUser]  = useState(null);
-  const [games, setGames] = useState([]);
+  const [user,        setUser]        = useState(null);
+  const [games,       setGames]       = useState([]);
+  const [selectedCat, setSelectedCat] = useState('전체'); // 필터된 카테고리
 
   const fetchUser = useCallback(async () => {
     try {
@@ -68,6 +70,17 @@ const MemberDetailPage = () => {
     return <div className="container mt-5">회원 정보를 불러오는 중...</div>;
   }
 
+  // 1) 고유 카테고리 목록 (+ "전체" 항목)  
+  const categories = [
+    '전체',
+    ...Array.from(new Set(games.map(g => g.category || '미분류'))),
+  ];
+
+  // 2) 선택된 카테고리에 따른 필터링  
+  const filteredGames = selectedCat === '전체'
+    ? games
+    : games.filter(g => (g.category || '미분류') === selectedCat);
+
   return (
     <Container className="mt-5">
       {/* 상단 헤더 */}
@@ -92,7 +105,10 @@ const MemberDetailPage = () => {
         </Row>
         <Row className="mt-2">
           <Col><strong>성별:</strong> {user.sex}</Col>
-          <Col><strong>생성일:</strong> {new Date(user.created_at).toLocaleDateString()}</Col>
+          <Col>
+            <strong>생성일:</strong>{' '}
+            {new Date(user.created_at).toLocaleDateString()}
+          </Col>
         </Row>
       </Card>
 
@@ -120,11 +136,34 @@ const MemberDetailPage = () => {
         </Col>
       </Row>
 
+      {/* 카테고리 필터 토글 버튼 */}
+      <ButtonGroup className="mb-3">
+        {categories.map(cat => (
+          <ToggleButton
+            key={cat}
+            id={`cat-${cat}`}
+            type="radio"
+            variant={selectedCat === cat ? 'primary' : 'outline-primary'}
+            name="category"
+            size="sm"
+            value={cat}
+            checked={selectedCat === cat}
+            onChange={e => setSelectedCat(e.currentTarget.value)}
+          >
+            {cat}
+          </ToggleButton>
+        ))}
+      </ButtonGroup>
+
       {/* 세션 카드 목록 */}
-      {games.length === 0 ? (
-        <p className="text-center text-muted">등록된 훈련 정보가 없습니다.</p>
+      {filteredGames.length === 0 ? (
+        <p className="text-center text-muted">
+          {selectedCat === '전체'
+            ? '등록된 훈련 정보가 없습니다.'
+            : `${selectedCat} 카테고리의 세션이 없습니다.`}
+        </p>
       ) : (
-        games.map(game => (
+        filteredGames.map(game => (
           <Card
             key={game.id}
             className="mb-3 p-3"
