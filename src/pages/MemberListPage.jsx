@@ -245,6 +245,7 @@ const MemberListPage = () => {
     onClick: (e, row) => navigate(`/admin/member/${row.id}`)
   };
 
+  
   return (
     <div className="container mt-5">
 
@@ -263,8 +264,8 @@ const MemberListPage = () => {
           onChange={e => setFilterSex(e.target.value)}
         >
           <option value="">성별</option>
-          <option value="남자">남자</option>
-          <option value="여자">여자</option>
+          <option value="남">남자</option>
+          <option value="여">여자</option>
         </Form.Select>
         <Form.Control
           type="number"

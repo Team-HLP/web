@@ -17,15 +17,13 @@ import '../styles/EyeCircle.css';
 /* ───────── 상수 ───────── */
 const EEG_BANDS = ['delta', 'theta', 'alpha', 'beta', 'gamma'];
 const EEG_COLORS = {
-  delta: '#1f77b4',  // 파랑
-  theta: '#ffa600',  // 주황 
-  alpha: '#2ca02c',  // 녹색
-  beta: '#17becf',  // 청록           \
-  gamma: '#9467bd',  // 보라
+  delta: '#1f77b4',
+  theta: '#ffa600',
+  alpha: '#2ca02c',
+  beta: '#17becf',
+  gamma: '#9467bd',
 };
-/* ─────────────────────── */
 
-/* CSV util ------------------------------------------------------- */
 const makeCSVandDownload = (filename, headerArr, rowsArr) => {
   const csv = [headerArr, ...rowsArr].map(r => r.join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -39,79 +37,43 @@ const makeCSVandDownload = (filename, headerArr, rowsArr) => {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 };
-/* ─────────────────────────────────────────────────────────────── */
 
 export default function SessionDetailPage() {
-  /* 기본 state ---------------------------------------------------- */
   const { userId, gameId } = useParams();
   const navigate = useNavigate();
-
   const [gameData, setGameData] = useState(null);
-  const [windowSize, setWindowSize] = useState(1); // pupil smooth 구간
-  const [eegWindow, setEegWindow] = useState(1);   // EEG  smooth 구간
-
-  /* pupil 확대 모달 ---------------------------------------------- */
-  const [zoom, setZoom] = useState({
-    show: false,
-    side: 'left',      // 'left' | 'right'
-    data: [],
-    baseline: 0,
-    range: [0, 0],
-  });
-
-  /* EEG 확대 모달 ------------------------------------------------- */
-  const [eegZoom, setEegZoom] = useState({
-    show: false,
-    data: [],          // [{ id, data }, ...]
-    range: [0, 0],
-  });
-
-  /* EEG 표시 토글 (theta·beta 기본 ON) ---------------------------- */
+  const [windowSize, setWindowSize] = useState(1);
+  const [eegWindow, setEegWindow] = useState(1);
+  const [zoom, setZoom] = useState({ show: false, side: 'left', data: [], baseline: 0, range: [0, 0] });
+  const [eegZoom, setEegZoom] = useState({ show: false, data: [], range: [0, 0] });
   const [eegVisible, setEegVisible] = useState(
-    EEG_BANDS.reduce(
-      (acc, band) => ({ ...acc, [band]: band === 'theta' || band === 'beta' }),
-      {},
-    )
+    EEG_BANDS.reduce((acc, band) => ({ ...acc, [band]: band === 'theta' || band === 'beta' }), {})
   );
 
-  /* 세션 데이터 로드 --------------------------------------------- */
   useEffect(() => {
     (async () => {
       try {
         const token = localStorage.getItem('access_token');
         const { data } = await axios.get(
           `https://api-hlp.o-r.kr/admin/game/${gameId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            params: { user_id: userId },
-          }
+          { headers: { Authorization: `Bearer ${token}` }, params: { user_id: userId } }
         );
         setGameData(data);
       } catch (e) {
         console.error('세션 로드 실패', e);
-
-        // 사용자에게 안내 메시지
-        if (e.response?.status === 500) {
-          alert('서버 오류가 발생했습니다. 나중에 다시 시도해주세요.');
-        } else if (e.response?.status === 404) {
-          alert('해당 세션 정보를 찾을 수 없습니다.');
-        } else if (e.response?.status === 401) {
+        if (e.response?.status === 500) alert('서버 오류가 발생했습니다. 나중에 다시 시도해주세요.');
+        else if (e.response?.status === 404) alert('해당 세션 정보를 찾을 수 없습니다.');
+        else if (e.response?.status === 401) {
           alert('인증이 만료되었습니다. 다시 로그인해주세요.');
-          navigate('/login'); // 로그인 페이지로 이동 등 처리
-        } else {
-          alert('세션 정보를 불러오는데 실패했습니다.');
-        }
-
-        // 실패 시 기본 상태로 초기화
+          navigate('/login');
+        } else alert('세션 정보를 불러오는데 실패했습니다.');
         setGameData(null);
       }
     })();
   }, [userId, gameId, navigate]);
 
-  if (!gameData)
-    return <div className="container mt-5">세션 정보를 불러오는 중...</div>;
+  if (!gameData) return <div className="container mt-5">세션 정보를 불러오는 중...</div>;
 
-  /* ---------- pupil smooth util -------------------------------- */
   const smooth = (records, key) => {
     if (!records?.length) return [];
     const buckets = [];
@@ -122,13 +84,9 @@ export default function SessionDetailPage() {
       buckets[b].v += r.pupil_size[key];
       buckets[b].c += 1;
     });
-    return buckets.map(({ t, v, c }) => ({
-      x: +(t / c).toFixed(2),
-      y: +(v / c).toFixed(3),
-    }));
+    return buckets.map(({ t, v, c }) => ({ x: +(t / c).toFixed(2), y: +(v / c).toFixed(3) }));
   };
 
-  /* ---------- EEG smooth util ---------------------------------- */
   const smoothEeg = (records, band) => {
     if (!records?.length) return [];
     const buckets = [];
@@ -139,37 +97,63 @@ export default function SessionDetailPage() {
       buckets[b].v += r[band];
       buckets[b].c += 1;
     });
-    return buckets.map(({ t, v, c }) => ({
-      x: +(t / c).toFixed(2),
-      y: +(v / c).toFixed(3),
-    }));
+    return buckets.map(({ t, v, c }) => ({ x: +(t / c).toFixed(2), y: +(v / c).toFixed(3) }));
   };
 
-  /* ---------- pupil 그래프 데이터 ------------------------------- */
   const rec = gameData.eye_data?.pupil_records ?? [];
   const baseline = gameData.eye_data?.base_pupil_size ?? {};
   const rightData = smooth(rec, 'right');
   const leftData = smooth(rec, 'left');
 
   const rightGraph = [
-    { id: '오른쪽 동공', data: rightData },
+    { id: '오른쪽 동공', data: [...rightData] },
     { id: '오른쪽 기준', data: rightData.map(d => ({ ...d, y: baseline.right ?? 0 })) },
   ];
   const leftGraph = [
-    { id: '왼쪽 동공', data: leftData },
+    { id: '왼쪽 동공', data: [...leftData] },
     { id: '왼쪽 기준', data: leftData.map(d => ({ ...d, y: baseline.left ?? 0 })) },
   ];
 
-  /* ---------- EEG 그래프 데이터 --------------------------------- */
-  const eegLines = EEG_BANDS
-    .map(b => ({
-      id: b,
-      color: EEG_COLORS[b],
-      data: smoothEeg(gameData.eeg_data ?? [], b),
-    }))
-    .filter(l => eegVisible[l.id]);
+  const eegLines = EEG_BANDS.map(b => ({ id: b, color: EEG_COLORS[b], data: smoothEeg(gameData.eeg_data ?? [], b) })).filter(l => eegVisible[l.id]);
 
-  /* ---------- 공통 Nivo 옵션 ----------------------------------- */
+  const sliceTooltip = ({ slice }) => (
+    <div
+      style={{
+        background: 'white',
+        padding: '8px 12px',
+        border: '1px solid #ccc',
+        fontSize: 13,
+        minWidth: 150,
+      }}
+    >
+      {slice.points.map(point => (
+        <div
+          key={point.id}
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 4,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div
+              style={{
+                width: 12,
+                height: 12,
+                backgroundColor: point.color,
+                borderRadius: 2,
+              }}
+            />
+            {/* 여기! */}
+            <span>{point.seriesId || '(없음)'}</span>
+          </div>
+          <strong>{(+point.data.y).toFixed(2)}</strong>
+        </div>
+      ))}
+    </div>
+  )
+
   const common = {
     margin: { top: 10, right: 50, bottom: 40, left: 50 },
     xScale: { type: 'linear' },
@@ -180,77 +164,34 @@ export default function SessionDetailPage() {
     curve: 'monotoneX',
     lineWidth: 1.5,
     useMesh: true,
+    sliceTooltip,
   };
 
-  /* ---------- pupil 확대 모달 오픈 ------------------------------ */
   const openZoom = side => slice => {
     if (!slice?.points?.length) return;
     const center = slice.points[0].data.x;
     const half = windowSize / 2;
     const minT = center - half;
     const maxT = center + half;
-
-    const raw = rec
-      .filter(r => r.time_stamp >= minT && r.time_stamp <= maxT)
-      .map(r => ({ x: r.time_stamp, y: r.pupil_size[side] }));
-
-    setZoom({
-      show: true,
-      side,
-      data: raw,
-      baseline: baseline[side] ?? 0,
-      range: [+(minT.toFixed(1)), +(maxT.toFixed(1))],
-    });
+    const raw = rec.filter(r => r.time_stamp >= minT && r.time_stamp <= maxT).map(r => ({ x: r.time_stamp, y: r.pupil_size[side] }));
+    setZoom({ show: true, side, data: raw, baseline: baseline[side] ?? 0, range: [+(minT.toFixed(1)), +(maxT.toFixed(1))] });
   };
 
-  /* ---------- EEG 확대 모달 오픈 ------------------------------- */
   const openEegZoom = slice => {
     if (!slice?.points?.length) return;
-
     const center = slice.points[0].data.x;
     const half = eegWindow / 2;
     const minT = center - half;
     const maxT = center + half;
-
-    // 현재 표시 중인 밴드들
     const activeBands = EEG_BANDS.filter(b => eegVisible[b]);
-
-    // 밴드별 RAW 추출
-    const rawLines = activeBands.map(b => ({
-      id: b,
-      data: (gameData.eeg_data ?? [])
-        .filter(r => r.time_stamp >= minT && r.time_stamp <= maxT)
-        .map(r => ({ x: r.time_stamp, y: r[b] })),
-    }));
-
-    setEegZoom({
-      show: true,
-      data: rawLines,
-      range: [+(minT.toFixed(1)), +(maxT.toFixed(1))],
-    });
+    const rawLines = activeBands.map(b => ({ id: b, data: (gameData.eeg_data ?? []).filter(r => r.time_stamp >= minT && r.time_stamp <= maxT).map(r => ({ x: r.time_stamp, y: r[b] })) }));
+    setEegZoom({ show: true, data: rawLines, range: [+(minT.toFixed(1)), +(maxT.toFixed(1))] });
   };
 
-  /* ---------- CSV 다운로드 -------------------------------------- */
-  const downloadPupilCSV = () =>
-    makeCSVandDownload(
-      `session_${gameId}_pupil.csv`,
-      ['time_stamp', 'left_pupil', 'right_pupil'],
-      rec.map(r => [r.time_stamp, r.pupil_size.left, r.pupil_size.right])
-    );
+  const downloadPupilCSV = () => makeCSVandDownload(`session_${gameId}_pupil.csv`, ['time_stamp', 'left_pupil', 'right_pupil'], rec.map(r => [r.time_stamp, r.pupil_size.left, r.pupil_size.right]));
 
-  const downloadEegCSV = () =>
-    makeCSVandDownload(
-      `session_${gameId}_eeg.csv`,
-      ['time_stamp', ...EEG_BANDS],
-      (gameData.eeg_data ?? []).map(d => [
-        d.time_stamp,
-        d.delta,
-        d.theta,
-        d.alpha,
-        d.beta,
-        d.gamma,
-      ])
-    );
+  const downloadEegCSV = () => makeCSVandDownload(`session_${gameId}_eeg.csv`, ['time_stamp', ...EEG_BANDS], (gameData.eeg_data ?? []).map(d => [d.time_stamp, d.delta, d.theta, d.alpha, d.beta, d.gamma]));
+
 
   /* ---------- UI ----------------------------------------------- */
   return (
